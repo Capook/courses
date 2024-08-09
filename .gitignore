@@ -328,3 +328,9 @@ dump.rdb
 courses/media/
 
 .pytest_cache/
+
+### sqlite
+*.sqlite3
+
+### pycharm idea
+.idea/

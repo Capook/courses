@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% load custom_filters %}
+
+{% block title %}
+  Course Detail
+{% endblock title %}
+{% block content %}
+  <h2>{{ course.name }}</h2>
+  <p>{{ course.description }}</p>
+  <h3>Assignments</h3>
+  {% if assignments %}
+    <ul>
+      {% for assignment in assignments %}
+        <li>
+          <h4>{{ assignment.name }} (due {{ assignment.due_at }})</h4>
+          <ul style="list-style: none; padding-left: 0;">
+            {% for assigned_problem in assignment.assignedproblem_set.all %}
+              <li>
+                {{ assigned_problem.number }}. {{ assigned_problem.problem.name }}
+                <a href="{{ assigned_problem.problem.statement.url }}" target="_blank">(View Statement)</a>
+              </li>
+            {% endfor %}
+          </ul>
+          {% with submission=submissions|get_item:assignment.id %}
+            {# Get the submission from the dictionary #}
+            {% if assignment.due_at < timezone.now %}
+              {% if submission %}
+                <p>You submitted this assignment on {{ submission.submitted_at }}.</p>
+                {% if submission.initial_submission %}
+                  <a href="{{ submission.initial_submission.url }}" target="_blank">View Submission</a>
+                {% endif %}
+              {% else %}
+                <p>You missed the deadline for this assignment and did not submit.</p>
+              {% endif %}
+            {% else %}
+              {% if submission and submission.initial_submission %}
+                <p>You submitted this assignment on {{ submission.submitted_at }}.</p>
+                <a href="{{ submission.initial_submission.url }}" target="_blank">View Submission</a>
+              {% endif %}
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="assignment_id" value="{{ assignment.id }}" />
+                {{ form.as_p }}
+                <button type="submit">Submit / Update</button>
+              </form>
+            {% endif %}
+          {% endwith %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No assignments yet.</p>
+  {% endif %}
+{% endblock content %}

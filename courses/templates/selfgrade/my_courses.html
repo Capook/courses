@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Courses
+{% endblock title %}
+{% block content %}
+  {% if registrations %}
+    <h2>My Courses</h2>
+    <ul>
+      {% for registration in registrations %}
+        <li>
+          <a href="{% url 'selfgrade:course_detail' course_id=registration.course.id %}">{{ registration.course.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>You are not registered in any courses.</p>
+  {% endif %}
+{% endblock content %}

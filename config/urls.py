@@ -19,6 +19,7 @@ urlpatterns = [
     # User management
     path("users/", include("courses.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
+    path("selfgrade/", include("courses.selfgrade.urls", namespace="selfgrade")),
     # Your stuff: custom urls includes go here
     # ...
     # Media files
