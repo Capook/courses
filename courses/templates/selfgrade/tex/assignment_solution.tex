@@ -1,0 +1,18 @@
+\documentclass[11pt]{article}
+
+{% include "selfgrade/tex/commands.tex" %}
+
+% Document
+\begin{document}
+
+\section*{ Solution set: {{assignment.name}} }
+\begin{enumerate}
+{# explicit function call () is used in jinja #}
+{% for assignedproblem in assignment.assignedproblem_set.all() %}
+    {# Would be good to generate unique label names to avoid conflicts between problems with the same label name #}
+    \item {{ assignedproblem.name }} \\ \\ {{ assignedproblem.statement_tex }}
+    \textbf{\Large Solution} \\ \\ {{ assignedproblem.solution_tex }}
+{% endfor %}
+\end{enumerate}
+
+\end{document}

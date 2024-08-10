@@ -1,0 +1,15 @@
+\usepackage{amsmath}
+\usepackage{xr}
+\usepackage{graphicx}
+
+{# raw because of the symbol { then # needed  #}
+{% raw %}
+\newcommand{\pd}{\partial}
+\newcommand{\mat}[1]{\begin{pmatrix} #1 \end{pmatrix}}
+\newcommand{\mm}[1]{\underline{\mathbf{#1}}}
+{% endraw %}
+
+{% graphicspath %}
+
+{# relative path does not work; raw is needed  #}
+\externaldocument{ {{- aux_absolute_path -}} }

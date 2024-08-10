@@ -1,0 +1,17 @@
+\documentclass[11pt]{article}
+
+{% include "selfgrade/tex/commands.tex" %}
+
+% Document
+\begin{document}
+
+
+\section*{ {{- problem.name -}} }
+
+{{- problem.statement_tex -}}
+
+\section*{Solution}
+
+{{- problem.solution_tex -}}
+
+\end{document}

@@ -66,3 +66,10 @@ INSTALLED_APPS += ["django_extensions"]
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+# Django tex
+LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
+LATEX_GRAPHICSPATH = ['C:/Dropbox/work/notes/CMbook/images']
+
+# My custom
+LATEX_AUX_FILE = 'C:/Dropbox/work/notes/CMbook/auxil/CM' #don't include .aux

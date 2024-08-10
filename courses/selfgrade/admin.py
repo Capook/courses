@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 from .models import AssignedProblem
 from .models import Assignment
@@ -30,6 +32,14 @@ class PartInline(admin.TabularInline):
     model = Part
     extra = 1  # Number of extra empty forms to display initially
 
+@admin.action(description='Compile tex')
+def compile_problem_tex_action(modeladmin, request, queryset):
+    for problem in queryset:
+        problem.compile_statement()
+        problem.compile_solution()
+
+    modeladmin.message_user(request, 'PDFs saved successfully.')
+    return HttpResponseRedirect(reverse('admin:selfgrade_problem_changelist'))  # Redirect back to the changelist view
 
 @admin.register(Problem)
 class ProblemAdmin(admin.ModelAdmin):
@@ -37,6 +47,7 @@ class ProblemAdmin(admin.ModelAdmin):
     list_filter = ("topic",)
     search_fields = ("name", "notes")
     inlines = [PartInline]
+    actions = [compile_problem_tex_action]
 
 
 class RegistrationInline(admin.TabularInline):
@@ -61,6 +72,14 @@ class AssignedProblemInline(admin.TabularInline):
     model = AssignedProblem
     extra = 1
 
+@admin.action(description='Compile tex')
+def compile_assignment_tex_action(modeladmin, request, queryset):
+    for assignment in queryset:
+        assignment.compile_statement()
+        assignment.compile_solution()
+
+    modeladmin.message_user(request, 'PDFs saved successfully.')
+    return HttpResponseRedirect(reverse('admin:selfgrade_assignment_changelist'))  # Redirect back to the changelist view
 
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
@@ -68,6 +87,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     list_filter = ("course",)
     search_fields = ("name",)
     inlines = [AssignedProblemInline]
+    actions = [compile_assignment_tex_action]
 
 
 @admin.register(AssignedProblem)

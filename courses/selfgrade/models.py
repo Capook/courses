@@ -1,4 +1,7 @@
 from django.db import models
+from django.core.files.base import ContentFile
+from django_tex.core import compile_template_to_pdf
+from django.conf import settings
 
 from courses.users.models import User
 
@@ -31,11 +34,19 @@ class Problem(models.Model):
         max_length=100,
         help_text="The name or title of the problem.",
     )
-    statement = models.FileField(
+    statement_tex = models.TextField(
+        help_text="LaTeX source for the problem statement.",
+    )
+    solution_tex = models.TextField(
+        help_text="LaTeX source for the problem solution.",
+    )
+    statement_pdf = models.FileField(
+        blank=True,
         upload_to="problem_statements/",
         help_text="PDF file containing the problem statement.",
     )
-    solution = models.FileField(
+    solution_pdf = models.FileField(
+        blank=True,
         upload_to="problem_solutions/",
         help_text="PDF file containing the problem solution.",
     )
@@ -53,6 +64,32 @@ class Problem(models.Model):
 
     def __str__(self):
         return self.name
+
+    def compile_statement(self):
+        """
+        Compile the statement tex and save to the statement_pdf field.  No latex error handling atm.
+        """
+        template_name = 'selfgrade/tex/problem_statement.tex'
+        context = {'problem': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
+        pdf_bytes = compile_template_to_pdf(template_name, context)
+        content_file = ContentFile(pdf_bytes)
+        self.statement_pdf.save(
+            f"problem_{self.id}_statement.pdf", content_file
+        )
+        self.save()
+
+    def compile_solution(self):
+        """
+        Compile the solution tex and save to the solution_pdf field.  No latex error handling atm.
+        """
+        template_name = 'selfgrade/tex/problem_solution.tex'
+        context = {'problem': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
+        pdf_bytes = compile_template_to_pdf(template_name, context)
+        content_file = ContentFile(pdf_bytes)
+        self.solution_pdf.save(
+            f"problem_{self.id}_solution.pdf", content_file
+        )
+        self.save()
 
 
 class Part(models.Model):
@@ -130,9 +167,46 @@ class Assignment(models.Model):
         on_delete=models.CASCADE,
         help_text="The course this assignment belongs to.",
     )
+    statement_pdf = models.FileField(
+        blank=True,
+        upload_to="assignment_statements/",
+        help_text="PDF file containing the assignment statement.",
+    )
+    solution_pdf = models.FileField(
+        blank=True,
+        upload_to="assignment_solutions/",
+        help_text="PDF file containing the assignment solution.",
+    )
 
     def __str__(self):
         return f"{self.name} (due {self.due_at}) for {self.course}"
+
+    def compile_statement(self):
+        """
+        Compile the statement tex and save to the statement_pdf field.  No latex error handling atm.
+        """
+        template_name = 'selfgrade/tex/assignment_statement.tex'
+        context = {'assignment': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
+        pdf_bytes = compile_template_to_pdf(template_name, context)
+        content_file = ContentFile(pdf_bytes)
+        self.statement_pdf.save(
+            f"assignment_{self.id}_statement.pdf", content_file
+        )
+        self.save()
+
+    def compile_solution(self):
+        """
+        Compile the statement tex and save to the statement_pdf field.  No latex error handling atm.
+        """
+        template_name = 'selfgrade/tex/assignment_solution.tex'
+        context = {'assignment': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
+        pdf_bytes = compile_template_to_pdf(template_name, context)
+        content_file = ContentFile(pdf_bytes)
+        self.solution_pdf.save(
+            f"assignment_{self.id}_solution.pdf", content_file
+        )
+        self.save()
+
 
 
 class AssignedProblem(models.Model):
@@ -153,6 +227,18 @@ class AssignedProblem(models.Model):
     number = models.PositiveIntegerField(
         help_text="The order of this problem within the assignment.",
     )
+
+    @property
+    def name(self):
+        return self.problem.name
+
+    @property
+    def statement_tex(self):
+        return self.problem.statement_tex
+
+    @property
+    def solution_tex(self):
+        return self.problem.solution_tex
 
     class Meta:
         """

@@ -3,6 +3,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django_tex.shortcuts import render_to_pdf
 from django.utils import timezone
 
 from .forms import SubmissionForm
@@ -74,3 +75,8 @@ def course_detail(request, course_id):
         "submissions": submissions,
     }
     return render(request, "selfgrade/course_detail.html", context)
+
+def testpdf(request):
+    template_name = 'selfgrade/tex/test.tex'
+    context = {'foo': 'Bar'}
+    return render_to_pdf(request, 'selfgrade/tex/test.tex', context, filename='test.pdf')

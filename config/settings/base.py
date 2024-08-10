@@ -83,6 +83,7 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.mfa",
     "allauth.socialaccount",
+    "django_tex",
 ]
 
 LOCAL_APPS = [
@@ -194,6 +195,12 @@ TEMPLATES = [
                 "courses.users.context_processors.allauth_settings",
             ],
         },
+    },
+    {
+        'NAME': 'tex',
+        'BACKEND': 'django_tex.engine.TeXEngine',#https://pypi.org/project/django-tex/
+        "DIRS": [str(APPS_DIR / "templates")],
+        'APP_DIRS': True,
     },
 ]
 
