@@ -67,6 +67,9 @@ INSTALLED_APPS += ["django_extensions"]
 # Your stuff...
 # ------------------------------------------------------------------------------
 
+#local time zone - should probably put this in base.py since production will use it too
+TIME_ZONE = 'America/Phoenix'
+
 # Django tex
 LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
 LATEX_GRAPHICSPATH = ['C:/Dropbox/work/notes/CMbook/images']

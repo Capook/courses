@@ -6,9 +6,10 @@ from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
+import courses.selfgrade.views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+    path("", courses.selfgrade.views.single_course_view, name="home"),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

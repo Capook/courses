@@ -8,6 +8,5 @@ class SelfgradeConfig(AppConfig):
     name = "courses.selfgrade"
     verbose_name = _("Selfgrade")
 
-    # def ready(self):
-    #     with contextlib.suppress(ImportError):
-    #         import courses.selfgrade.signals
+    def ready(self):
+        import courses.selfgrade.signals

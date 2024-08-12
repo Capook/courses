@@ -2,6 +2,9 @@ from django.db import models
 from django.core.files.base import ContentFile
 from django_tex.core import compile_template_to_pdf
 from django.conf import settings
+from django.utils import timezone
+from django.db.models import Sum
+import uuid
 
 from courses.users.models import User
 
@@ -24,7 +27,6 @@ class Topic(models.Model):
     def __str__(self):
         return self.name
 
-
 class Problem(models.Model):
     """
     Represents a problem with a statement, solution, and other details.
@@ -33,6 +35,10 @@ class Problem(models.Model):
     name = models.CharField(
         max_length=100,
         help_text="The name or title of the problem.",
+    )
+    num_parts = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="The number of parts (sub-problems) of the problem"
     )
     statement_tex = models.TextField(
         help_text="LaTeX source for the problem statement.",
@@ -67,52 +73,37 @@ class Problem(models.Model):
 
     def compile_statement(self):
         """
-        Compile the statement tex and save to the statement_pdf field.  No latex error handling atm.
+        Compile the statement tex and save to the statement_pdf field.
+        Add uuid to filename since it will be in a public media directory.
+        (The filename is then not revealed unless the app wants to.)
+        No latex error handling atm.
         """
         template_name = 'selfgrade/tex/problem_statement.tex'
         context = {'problem': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
         pdf_bytes = compile_template_to_pdf(template_name, context)
         content_file = ContentFile(pdf_bytes)
+        filename = f"problem_{self.id}_statement_{uuid.uuid4()}.pdf"
         self.statement_pdf.save(
-            f"problem_{self.id}_statement.pdf", content_file
+            filename, content_file
         )
         self.save()
 
     def compile_solution(self):
         """
-        Compile the solution tex and save to the solution_pdf field.  No latex error handling atm.
+        Compile the solution tex and save to the solution_pdf field.
+        Add uuid to filename since it will be in a public media directory.
+        (The filename is then not revealed unless the app wants to.)
+        No latex error handling atm.
         """
         template_name = 'selfgrade/tex/problem_solution.tex'
         context = {'problem': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
         pdf_bytes = compile_template_to_pdf(template_name, context)
         content_file = ContentFile(pdf_bytes)
+        filename=f"problem_{self.id}_solution_{uuid.uuid4()}.pdf" #obfuscate filename since it will go in a public dir
         self.solution_pdf.save(
-            f"problem_{self.id}_solution.pdf", content_file
+            filename, content_file
         )
         self.save()
-
-
-class Part(models.Model):
-    """
-    Represents the existence of a part or sub-problem within a problem.
-    """
-
-    problem = models.ForeignKey(
-        Problem,
-        on_delete=models.CASCADE,
-        related_name="parts",
-        help_text="The problem this part belongs to.",
-    )
-    number = models.PositiveIntegerField(
-        help_text="The order of this part within the problem.",
-    )
-
-    class Meta:
-        unique_together = ("problem", "number")
-
-    def __str__(self):
-        return f"Part {self.number} of {self.problem}"
-
 
 class Course(models.Model):
     """
@@ -158,6 +149,8 @@ class Assignment(models.Model):
     """
 
     due_at = models.DateTimeField(help_text="The date and time the assignment is due.")
+    self_grades_due_at = models.DateTimeField(help_text="The date and time that assignment self-grades are due.")
+    #TODO: validate selfgrad due after due
     name = models.CharField(
         max_length=100,
         help_text="The name or title of the assignment.",
@@ -183,35 +176,48 @@ class Assignment(models.Model):
 
     def compile_statement(self):
         """
-        Compile the statement tex and save to the statement_pdf field.  No latex error handling atm.
+        Compile the statement tex and save to the statement_pdf field.
+        Add uuid to filename since it will be in a public media directory.
+        (The filename is then not revealed unless the app wants to.)
+        No latex error handling atm.
         """
         template_name = 'selfgrade/tex/assignment_statement.tex'
         context = {'assignment': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
         pdf_bytes = compile_template_to_pdf(template_name, context)
         content_file = ContentFile(pdf_bytes)
+        filename = f"assignment_{self.id}_statement.pdf_{uuid.uuid4()}.pdf"
         self.statement_pdf.save(
-            f"assignment_{self.id}_statement.pdf", content_file
+            filename, content_file
         )
         self.save()
 
     def compile_solution(self):
         """
-        Compile the statement tex and save to the statement_pdf field.  No latex error handling atm.
+        Compile the statement tex and save to the statement_pdf field.
+        Add uuid to filename since it will be in a public media directory.
+        (The filename is then not revealed unless the app wants to.)
+        No latex error handling atm.
         """
         template_name = 'selfgrade/tex/assignment_solution.tex'
         context = {'assignment': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}
         pdf_bytes = compile_template_to_pdf(template_name, context)
         content_file = ContentFile(pdf_bytes)
-        self.solution_pdf.save(
-            f"assignment_{self.id}_solution.pdf", content_file
-        )
+        filename = f"assignment_{self.id}_solution_{uuid.uuid4()}.pdf"
+        self.solution_pdf.save(filename, content_file)
         self.save()
+
+    def is_after_deadline(self):
+        return timezone.now() > self.due_at
+
+    def is_after_self_grading_deadline(self):
+        return timezone.now() > self.self_grades_due_at
+
 
 
 
 class AssignedProblem(models.Model):
     """
-    Associates a problem with an assignment, maintaining order.
+    Associates a problem with an assignment, maintaining order.  Points are given to parts.
     """
 
     problem = models.ForeignKey(
@@ -221,7 +227,7 @@ class AssignedProblem(models.Model):
     )
     assignment = models.ForeignKey(
         Assignment,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         help_text="The assignment this problem is part of.",
     )
     number = models.PositiveIntegerField(
@@ -248,8 +254,59 @@ class AssignedProblem(models.Model):
 
         unique_together = (("assignment", "number"), ("assignment", "problem"))
 
+    # def clean(self):
+    #     """
+    #     Make sure that we cannot touch assignedProblems if there is already a submission (have not thought about side effects)
+    #     This doesn't work because we can't do things like edit submission due date... the clean signal cascades
+    #     """
+    #     if self.assignment.id and self.assignment.submission_set.exists():
+    #         #we need to make sure it has a primary key before asking about its submission set
+    #         #if it doesn't have a primary key we are creating the object
+    #         raise ValidationError("There is already a submission for this assigned problem.")
+
     def __str__(self):
         return f"Problem {self.number} on {self.assignment}: {self.problem.name}"
+
+
+class AssignedPart(models.Model):
+    """
+    Represents a part of an assigned problem, storing the points that part is worth.
+    """
+    assigned_problem = models.ForeignKey(
+        AssignedProblem,
+        on_delete=models.CASCADE,
+        help_text="The assigned problem this part is associated with",
+    )
+    number = models.PositiveIntegerField(
+        help_text="The order of this part within the problem.",
+    )
+    points = models.PositiveIntegerField(
+        help_text="The number of points this part is worth.",
+        default=4
+    )
+
+    class Meta:
+        """
+        Make sure ordering is valid
+        """
+
+        unique_together = ("assigned_problem", "number")
+
+    def __str__(self):
+        return f"Part {self.number} assigned for {self.points} points."
+
+    def get_problem_number(self):
+        return self.assigned_problem.number
+
+    def get_label(self):
+        return f"{self.get_problem_number()}{settings.SUB_PARTS[self.number-1]}"
+
+    #Drops sublabel if its the only part - db call required
+    def get_label_smart(self):
+        if AssignedPart.objects.exclude(id=self.id).filter(assigned_problem=self.assigned_problem).exists():
+            return self.get_label()
+        else:
+            return f"{self.get_problem_number()}"
 
 
 class Submission(models.Model):
@@ -300,9 +357,29 @@ class Submission(models.Model):
         blank=True,
         help_text="The date and time the submission was reviewed.  Null prior to review.",
     )
+    reviewer_comments = models.TextField(
+        blank=True,
+        help_text="Comments from the reviewer (TA or grader).",
+    )
+
+    class Meta:
+        """
+        Each student can submit only one submission for each assignment.
+        """
+        unique_together = ("registration", "assignment")
 
     def __str__(self):
         return f"Submission for {self.assignment} by {self.registration.user}"
+
+    def get_percentage_grade(self):
+        gradedparts = self.gradedpart_set
+        num_parts = gradedparts.count()
+        num_graded = gradedparts.filter(grade__isnull=False).count()
+        if num_parts != num_graded:
+            return None
+        else:
+            qs = gradedparts.aggregate(total=Sum('points'),score=Sum('final'))
+            return qs['score']/qs['total']
 
 
 class GradedPart(models.Model):
@@ -315,8 +392,8 @@ class GradedPart(models.Model):
         on_delete=models.CASCADE,
         help_text="The submission being graded.",
     )
-    part = models.ForeignKey(
-        Part,
+    assigned_part = models.ForeignKey(
+        AssignedPart,
         on_delete=models.CASCADE,
         help_text="The specific part being graded.",
     )
@@ -325,16 +402,6 @@ class GradedPart(models.Model):
         blank=True,
         help_text="The student's self-assessment grade for this part.",
     )
-    grade_guess = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        help_text="The student's guess of the grader's grade for this part.",
-    )
-    guess_confidence = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        help_text="The student's confidence in their grade guess (1-5 scale).",
-    )
     grade = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
@@ -342,4 +409,15 @@ class GradedPart(models.Model):
     )
 
     def __str__(self):
-        return f"Grading for Part {self.part.number} in {self.submission}"
+        return f"Grading for Part {self.assigned_part.number} in {self.submission}"
+
+    def get_label(self):
+        return self.assigned_part.get_label()
+
+    #Drops sublabel if its the only part - db call required
+    def get_label_smart(self):
+        return self.assigned_part.get_label_smart()
+
+    @property
+    def points(self):
+        return self.assigned_part.points

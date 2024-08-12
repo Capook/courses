@@ -1,3 +1,17 @@
 {% extends "base.html" %}
 
-
+{% block title %}
+  OYGo
+{% endblock title %}
+{% block content %}
+  {% if request.user.is_authenticated %}
+    {% if request.user.registration_set.exists %}
+      Head to <a href="{% url 'selfgrade:my_courses' %}">courses</a>.
+    {% else %}
+      This is the course page for PHYS 511, Fall 2024 (taught by Sam Gralla).  You have signed up with email {{ request.user.email }}.  If this is your official university email address and you are enrolled in the course, I will approve the registration.  Then you will be able to see course content and submit assignments.
+      {% endif %}
+  {% else %}
+This is the course page for PHYS 511, Fall 2024 (taught by Sam Gralla).  If you are a student in the class, please sign up using your university email address.
+  After I manually approve, you will see the course content.  If you have already signed up and been approved, just log in.
+  {% endif %}
+{% endblock content %}

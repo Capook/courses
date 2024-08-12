@@ -11,3 +11,31 @@
   background-color: #f2dede;
   border-color: #eed3d7;
 }
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.accordion-button {
+    background-color: #FAFAFA;
+    color: black;
+}
+
+.accordion-button:hover {
+    background-color: #F2F2F2;
+  color: black;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #EAEAEA;
+    color: black;
+}
+
+.accordion-button:not(.collapsed):hover {
+        background-color: #F2F2F2;
+  color: black;
+}
+
+.accordion-body {
+  background-color:#FAFAFA
+}

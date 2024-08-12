@@ -3,10 +3,10 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from .models import AssignedProblem
+from .models import AssignedPart
 from .models import Assignment
 from .models import Course
 from .models import GradedPart
-from .models import Part
 from .models import Problem
 from .models import Registration
 from .models import Submission
@@ -14,23 +14,11 @@ from .models import Topic
 
 # Register your models here.
 
-
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
     list_display = ("name", "parent")
     list_filter = ("parent",)
     search_fields = ("name",)
-
-
-@admin.register(Part)
-class PartAdmin(admin.ModelAdmin):
-    list_display = ("problem", "number")
-    list_filter = ("problem",)
-
-
-class PartInline(admin.TabularInline):
-    model = Part
-    extra = 1  # Number of extra empty forms to display initially
 
 @admin.action(description='Compile tex')
 def compile_problem_tex_action(modeladmin, request, queryset):
@@ -46,7 +34,6 @@ class ProblemAdmin(admin.ModelAdmin):
     list_display = ("name", "topic")
     list_filter = ("topic",)
     search_fields = ("name", "notes")
-    inlines = [PartInline]
     actions = [compile_problem_tex_action]
 
 
@@ -90,11 +77,23 @@ class AssignmentAdmin(admin.ModelAdmin):
     actions = [compile_assignment_tex_action]
 
 
+class AssignedPartInline(admin.TabularInline):
+    model = AssignedPart
+    extra = 0  # Don't allow creation or deletion
+    can_delete = False
+    max_num = 0
+
 @admin.register(AssignedProblem)
 class AssignedProblemAdmin(admin.ModelAdmin):
     list_display = ("problem", "assignment", "number")
     list_filter = ("assignment", "problem")
+    inlines = [AssignedPartInline]
 
+class GradedPartInline(admin.TabularInline):
+    model = GradedPart
+    extra = 0  # Don't allow creation or deletion
+    can_delete = False
+    max_num = 0
 
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):
@@ -112,20 +111,26 @@ class SubmissionAdmin(admin.ModelAdmin):
         "graded_at",
         "reviewed_at",
     )
+    inlines = [GradedPartInline]
 
+@admin.register(AssignedPart)
+class AssignedPartAdmin(admin.ModelAdmin):
+    list_display = (
+        "assigned_problem",
+        "number",
+        "points",
+    )
 
 @admin.register(GradedPart)
 class GradedPartAdmin(admin.ModelAdmin):
     list_display = (
         "submission",
-        "part",
+        "assigned_part",
         "self_grade",
-        "grade_guess",
-        "guess_confidence",
         "grade",
     )
     list_filter = (
         "submission__registration__user",
         "submission__assignment",
-        "part__problem",
+        "assigned_part__assigned_problem",
     )

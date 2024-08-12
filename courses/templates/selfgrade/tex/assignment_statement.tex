@@ -4,14 +4,16 @@
 
 % Document
 \begin{document}
+\begin{center}
+\textbf{ \LARGE {{assignment.name}} }
+\end{center}
 
-\section*{ {{assignment.name}} }
-{# need to localize... \textit{ due {{ assignment.due_at }} } #}
+{# \textit{ due {{ assignment.due_at }} } #}
 \begin{enumerate}
 {# explicit function call () is used in jinja #}
 {% for assignedproblem in assignment.assignedproblem_set.all() %}
     {# Would be good to generate unique label names to avoid conflicts between problems with the same label name #}
-    \item {{ assignedproblem.name }} \\ \\ {{ assignedproblem.statement_tex }}
+    \item \textbf{ {{ assignedproblem.name }} } \\ \\ {{ assignedproblem.statement_tex }}
 {% endfor %}
 \end{enumerate}
 

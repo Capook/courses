@@ -1,55 +1,214 @@
 {% extends "base.html" %}
 
 {% load custom_filters %}
+{% load crispy_forms_tags %}
+{% load tz %}
 
 {% block title %}
-  Course Detail
+  {{ course.name }}
 {% endblock title %}
 {% block content %}
-  <h2>{{ course.name }}</h2>
-  <p>{{ course.description }}</p>
-  <h3>Assignments</h3>
-  {% if assignments %}
-    <ul>
-      {% for assignment in assignments %}
-        <li>
-          <h4>{{ assignment.name }} (due {{ assignment.due_at }})</h4>
-          <ul style="list-style: none; padding-left: 0;">
-            {% for assigned_problem in assignment.assignedproblem_set.all %}
-              <li>
-                {{ assigned_problem.number }}. {{ assigned_problem.problem.name }}
-                <a href="{{ assigned_problem.problem.statement.url }}" target="_blank">(View Statement)</a>
-              </li>
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-8">
+        <h2 class="mb-3">{{ course.name }}</h2>
+        <p>{{ course.description }}</p>
+
+        <hr>
+        <h3 class="mt-4">Class notes</h3>
+        <a href="https://sgralla.arizona.edu/taylor_series.pdf" target="_blank" class="btn btn-outline-secondary">Download
+          class notes</a>
+        <hr>
+        <h3 class="mt-3">Assignments</h3>
+        {% if assignments %}
+          <div class="accordion" id="assignmentsAccordion">
+            {% for assignment in assignments %}
+              {% with submission=submissions|get_item:assignment.id %}
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading{{ assignment.id }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ assignment.id }}" aria-expanded="false"
+                            aria-controls="collapse{{ assignment.id }}">
+                      <div class="d-flex justify-content-between w-100">
+                        <span class="fw-bold">{{ assignment.name }}</span>
+                        <span class="me-3 text-muted"> due {{ assignment.due_at|date:"n/j g:i a" }}</span>
+                      </div>
+                    </button>
+                  </h2>
+
+                  <div id="collapse{{ assignment.id }}" class="accordion-collapse collapse"
+                       aria-labelledby="heading{{ assignment.id }}" data-bs-parent="#assignmentsAccordion">
+                    <div class="accordion-body">
+
+                      {# PROBLEMS #}
+                      <div class="card" style="background: papayawhip">
+                        <div class="card-header"><h5>Problems</h5></div>
+                        <div class="card-body">
+                          {% if assignment.statement_pdf %}
+                            <a href="{{ assignment.statement_pdf.url }}" target="_blank" class="btn btn-link">View
+                              assignment</a>
+                          {% else %}
+                            Assignment is not yet available
+                          {% endif %}
+                          {% if assignment.is_after_deadline %}
+                            {% if assignment.solution_pdf %}
+                              <a href="{{ assignment.solution_pdf.url }}" target="_blank" class="btn btn-link">View
+                                solutions</a>
+                            {% else %}
+                              Solutions not available yet
+                            {% endif %}
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      {# SUBMISSION #}
+                      <div class="card mt-2" style="background: seashell">
+                        <div class="card-header"><h5 class="card-title">Submission</h5></div>
+                        <div class="card-body">
+                          {% if assignment.is_after_deadline %}
+                            {% if submission and submission.initial_submission %}
+                              <p>You submitted this assignment on {{ submission.submitted_at|date:"n/j g:i a" }}.</p>
+                              <a href="{{ submission.initial_submission.url }}" target="_blank" class="btn btn-link">View
+                                submission</a>
+                            {% else %}
+                              <p>You missed the deadline for this assignment and did not submit.</p>
+                            {% endif %}
+                          {% else %} {# deadline has not passed yet  #}
+                            {% if submission and submission.initial_submission %}
+                              <div>You submitted this assignment on {{ submission.submitted_at|date:"n/j g:i a" }}
+                              You may update your submission until the deadline.</div>
+                              <a href="{{ submission.initial_submission.url }}" target="_blank" class="btn btn-link mb-2">View
+                                Submission</a>
+                            {% endif %}
+                            <form method="post" enctype="multipart/form-data">
+                              {% csrf_token %}
+                              <input type="hidden" name="assignment_id" value="{{ assignment.id }}"/>
+                              <input type="hidden" name="submission_form_submit" value="true">
+                              <div class="form-group d-flex">
+                                <span>{{ submission_form|crispy }}</span>
+                                <span class="ms-2">
+                                  <button type="submit" class="btn btn-primary">
+                                    {% if submission and submission.initial_submission %}Update{% else %}Submit{% endif %}
+                                  </button>
+                                </span>
+                              </div>
+                            </form>
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      {# GRADING #}
+                      <div class="card mt-2" style="background: aliceblue">
+                        <div class="card-header"><h5 class="card-title">Grading</h5></div>
+                        <div class="card-body">
+                          {% if not assignment.is_after_deadline %}
+                            Grading is not yet available
+                          {% else %}
+                            {% if assignment.is_after_self_grading_deadline %}
+                              <div class="text-muted">
+                                check if grading was submitted and display grades
+                              </div>
+                            {% else %} {# grading deadline hasn't passed #}
+                              {% if submission %}
+                                {% if submission.graded_submission %}
+                                  <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}.</p>
+                                  <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">View
+                                    graded submission</a>
+                                {% endif %}
+                                <form method="post" enctype="multipart/form-data">
+                                  {% csrf_token %}
+                                  {{ submission.grading_formset.management_form }}
+                                  <table class="table">
+                                    <thead>
+                                    <tr>
+                                      <th scope="col">#</th>
+                                      <th scope="col">Points</th>
+                                      <th scope="col">Self grade</th>
+                                      <th scope="col">Final Grade</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for form in submission.grading_formset %}
+                                      <div class="form-group">
+                                        <tr>
+                                          <th scope="row">{{ form.instance.get_label_smart }}</th>
+                                          <td>{{ form.instance.points }}</td>
+                                          <td>{% crispy form form.helper %}</td>
+                                          {# don't render individual fields because hidden fields used by formset might be missing #}
+                                          <td>{% if form.instance.grade %}{{ form.instance.grade }}{% else %}
+                                            -- {% endif %}</td>
+                                        </tr>
+                                      </div>
+                                    {% endfor %}
+                                    </tbody>
+                                  </table>
+                                  <div class="form-group">
+                                    {{ graded_submission_form|crispy }}
+                                  </div>
+
+                                  <input type="hidden" name="grading_form_submit" value="true">
+                                  <input type="hidden" name="assignment_id" value="{{ assignment.id }}"/>
+                                  <button type="submit" class="btn btn-primary">Submit grades</button>
+                                </form>
+                              {% else %} {#  no submission recorded #}
+                                You did not submit this assignment.
+                              {% endif %}
+                            {% endif %}
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endwith %}
             {% endfor %}
-          </ul>
-          {% with submission=submissions|get_item:assignment.id %}
-            {# Get the submission from the dictionary #}
-            {% if assignment.due_at < timezone.now %}
-              {% if submission %}
-                <p>You submitted this assignment on {{ submission.submitted_at }}.</p>
-                {% if submission.initial_submission %}
-                  <a href="{{ submission.initial_submission.url }}" target="_blank">View Submission</a>
-                {% endif %}
-              {% else %}
-                <p>You missed the deadline for this assignment and did not submit.</p>
-              {% endif %}
-            {% else %}
-              {% if submission and submission.initial_submission %}
-                <p>You submitted this assignment on {{ submission.submitted_at }}.</p>
-                <a href="{{ submission.initial_submission.url }}" target="_blank">View Submission</a>
-              {% endif %}
-              <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="hidden" name="assignment_id" value="{{ assignment.id }}" />
-                {{ form.as_p }}
-                <button type="submit">Submit / Update</button>
-              </form>
-            {% endif %}
-          {% endwith %}
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No assignments yet.</p>
-  {% endif %}
+          </div>
+        {% else %}
+          <p>No assignments yet.</p>
+        {% endif %}
+        <hr>
+        <h3>Assignment Grade Summary</h3>
+        {% if percentage_grades %}
+          <table class="table">
+            <thead>
+            <tr>
+              {% for key in percentage_grades.keys %}
+                <th>{{ key }}</th>
+              {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              {% for value in percentage_grades.values %}
+                <td>{% if value %}{{ value }}{% else %}--{% endif %}</td>
+              {% endfor %}
+            </tr>
+            </tbody>
+          </table>
+          <div class="text-muted">{{ grading_scheme }}</div>
+        {% else %}
+          <p>No grades available</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# remove the mb-3 rendered by crispy in the outer div.  can't find a way to do it within crispy #}
+  <script>
+    const elements = document.querySelectorAll('[id^="div_id_gradedpart_set-"][id$="-self_grade"]');
+
+    elements.forEach(element => {
+      element.classList.remove('mb-3');
+    });
+  </script>
+
+  {#  <script>#}
+  {#    // Get all self grade elements#}
+  {#    const elements = document.querySelectorAll('[id^="id_gradedpart_set-"][id$="-self_grade"]');#}
+  {##}
+  {#    // Loop through the elements and set the 'required' attribute#}
+  {#    elements.forEach(element => {#}
+  {#      element.required = true;#}
+  {#    });#}
+  {#  </script>#}
 {% endblock content %}
