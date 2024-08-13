@@ -10,6 +10,7 @@ from .base import *  # noqa: F403
 from .base import DATABASES
 from .base import INSTALLED_APPS
 from .base import env
+from .base import STATIC_ROOT
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -72,13 +73,19 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
 # STATIC & MEDIA
 # ------------------------
 STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    'default': {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        'AWS_ACCESS_KEY_ID': env('DJANGO_AWS_ACCESS_KEY_ID'),
+        'AWS_SECRET_ACCESS_KEY': env('DJANGO_AWS_SECRET_ACCESS_KEY'),
+        'AWS_STORAGE_BUCKET_NAME': env('DJANGO_AWS_STORAGE_BUCKET_NAME'),
+        # Add other S3 configuration options as needed (region, etc.)
     },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     },
 }
+
+STATIC_ROOT = '/var/www/static'
 
 # EMAIL
 # ------------------------------------------------------------------------------
