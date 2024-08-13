@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Review list
+{% endblock title %}
+{% block content %}
+  {% if submissions %}
+    <h2>To review</h2>
+    <ul>
+      {% for submission in submissions %}
+        <li>
+          <a href="{% url 'selfgrade:review' submission_id=submission.id %}">{{ submission }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No submissions to review.</p>
+  {% endif %}
+{% endblock content %}

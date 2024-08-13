@@ -1,14 +1,15 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
-from django_tex.shortcuts import render_to_pdf
 from django.utils import timezone
 from django.contrib import messages
+from django.conf import settings
 
-from .forms import SubmissionForm, GradedSubmissionForm, GradingFormSet
-from .models import Assignment, AssignedProblem
+from .forms import SubmissionForm, GradedSubmissionForm, GradingFormSet, ReviewerCommentsForm, ReviewFormSet
+from .models import Assignment
 from .models import Course
 from .models import Registration
 from .models import Submission
@@ -37,33 +38,27 @@ def my_courses(request):
 
 @login_required
 def course_detail(request, course_id):
+    #this could be just registration_detail... right?
     course = get_object_or_404(Course, id=course_id)
     assignments = Assignment.objects.filter(course=course).order_by('due_at').prefetch_related("assignedproblem_set")
-    #assignments = Assignment.objects.filter(course=course).prefetch_related(Prefetch("assignedproblem_set",queryset=AssignedProblem.objects.order_by("number")))
-    registration = get_object_or_404(Registration, user=request.user, course=course)
+    registration = Registration.objects.filter(user=request.user, course=course).first()
+    if not registration:
+        return redirect('selfgrade:my_courses')
 
     # We initialize everything as if it is a get and then overwrite the appropriate form if it's a post
     # This makes sure everything is defined for context at the end
     # Prepare a dictionary of submissions for each assignment associated with this registration
-    # Also a dictionary of percentage_grades for each assignment (None for ungraded)
     submissions = {}
-    percentage_grades = {}
     for assignment in assignments:
         submissions[assignment.id] = registration.submission_set.filter(
             assignment=assignment,
         ).first()
-        percentage_grade = None #overwrite if there is one
         #add formset - assumes GradedParts have been created (automatic at submission creation)
         if submissions[assignment.id]:
             submissions[assignment.id].grading_formset = GradingFormSet(instance=submissions[assignment.id])
-            percentage_grade = submissions[assignment.id].get_percentage_grade()
-        percentage_grades[assignment.name] = percentage_grade
-    numeric_percentage_grades = [float(value) for value in percentage_grades.values() if value]
-    if numeric_percentage_grades:
-        percentage_grades['Total']=sum(numeric_percentage_grades)/len(numeric_percentage_grades)
-    else:
-        percentage_grades['Total']='--'
-    grading_scheme = 'Total is calculated as equally weighted average of homework percentages, dropping two lowest scores'
+
+    grading_scheme = 'Total is calculated as the average of homework percentages, dropping the two lowest scores.  This is the grade that will count as your homework grade in the overall class grade.'
+    percentage_grades = registration.get_percentage_grades()
 
     #this was Gemini's idea to have one generic form
     #template renders one for each assignment, adding assignment_id.
@@ -123,7 +118,66 @@ def course_detail(request, course_id):
     return render(request, "selfgrade/course_detail.html", context)
 
 def single_course_view(request):
-    if request.user.is_authenticated and request.user.registration_set.count()==1:
-        return redirect("selfgrade:course_detail", course_id=request.user.registration_set.first().id)
+    if request.user.is_authenticated and request.user.registration_set.count() == 1:
+        return redirect("selfgrade:course_detail", course_id=request.user.registration_set.first().course.id)
     else:
         return render(request, "pages/home.html", {})
+
+@staff_member_required
+def next_review(request, assignment_id):
+    next_submission=Submission.objects.filter(assignment=assignment_id, reviewed_at__isnull=True).first()
+    if next_submission:
+        return redirect('selfgrade:review', submission_id=next_submission.id)
+    else:
+        course = Assignment.objects.get(id=assignment_id).course
+        return redirect('selfgrade:review_list', course_id=course.id)
+
+@staff_member_required
+def review_list(request, course_id):
+    submissions=Submission.objects.filter(registration__course=course_id, reviewed_at__isnull=True)
+    return render(request,"selfgrade/review_list.html",{'submissions':submissions})
+
+@staff_member_required
+def review(request, submission_id):
+    submission = get_object_or_404(Submission, id=submission_id)
+
+    if request.method == "POST":
+        reviewer_comments_form = ReviewerCommentsForm(request.POST, instance=submission)
+        review_formset = ReviewFormSet(request.POST, instance=submission)
+        if reviewer_comments_form.is_valid() and review_formset.is_valid():
+            reviewer_comments_form.save()
+            review_formset.save()
+            submission.reviewed_by = request.user
+            submission.reviewed_at = timezone.now()
+            submission.save()
+            messages.add_message(request, messages.SUCCESS, f'Successfully submitted review: {submission.assignment.name} for {submission.registration.user}')
+            return redirect('selfgrade:next_review',assignment_id=submission.assignment.id)
+    else:
+        reviewer_comments_form = ReviewerCommentsForm(instance=submission)
+        review_formset = ReviewFormSet(instance=submission)
+
+    context = {
+        "submission": submission,
+        "reviewer_comments_form": reviewer_comments_form,
+        "review_formset": review_formset,
+        "adobe_api_key": settings.ADOBE_EMBED_API_KEY
+    }
+    return render(request, "selfgrade/review.html", context)
+
+@staff_member_required()
+def grade_report(request, course_id):
+    registrations = Registration.objects.filter(course_id=course_id)
+
+    headers = []
+    data = []
+    if registrations:
+        for registration in registrations:
+            row = [registration.user.email]
+            pg = registration.get_percentage_grades()
+            row = row + list(pg.values())
+            data.append(row)
+        headers = ['Email'] + list(pg.keys())
+
+    context = {'headers': headers, 'data': data} #django template logic is limited... pass keys here
+
+    return render(request,"selfgrade/grade_report.html", context )

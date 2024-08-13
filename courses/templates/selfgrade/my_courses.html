@@ -14,6 +14,7 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p>You are not registered in any courses.</p>
+    <p>This is the course page for PHYS 511, Fall 2024 (taught by Sam Gralla).  You have signed up with email {{ request.user.email }}.  If this is your official university email address and you are enrolled in the course, I will approve the registration.  Then you will be able to see course content and submit assignments.
+      </p>
   {% endif %}
 {% endblock content %}

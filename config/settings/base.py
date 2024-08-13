@@ -298,3 +298,4 @@ SOCIALACCOUNT_FORMS = {"signup": "courses.users.forms.UserSocialSignupForm"}
 # ------------------------------------------------------------------------------
 
 SUB_PARTS = ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r')
+ADOBE_EMBED_API_KEY = env('ADOBE_EMBED_API_KEY') #I Don't think this is how it's supposed to work, but I can't seem to get env later

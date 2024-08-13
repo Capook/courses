@@ -12,6 +12,8 @@ from .models import Registration
 from .models import Submission
 from .models import Topic
 
+from django.utils.html import format_html
+
 # Register your models here.
 
 @admin.register(Topic)
@@ -103,6 +105,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "submitted_at",
         "graded_at",
         "reviewed_at",
+        "review_link"
     )
     list_filter = (
         "registration__user",
@@ -112,6 +115,12 @@ class SubmissionAdmin(admin.ModelAdmin):
         "reviewed_at",
     )
     inlines = [GradedPartInline]
+
+    def review_link(self, obj):
+        url = reverse('selfgrade:review', args=[obj.id])  # Replace 'app_name' with your actual app name
+        return format_html('<a href="{}" target="_blank">Review</a>', url)
+
+    review_link.short_description = 'Review'  # Set a column header
 
 @admin.register(AssignedPart)
 class AssignedPartAdmin(admin.ModelAdmin):

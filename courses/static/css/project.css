@@ -39,3 +39,8 @@ body {
 .accordion-body {
   background-color:#FAFAFA
 }
+
+blockquote {
+  margin-left: 1rem; /* Adjust indentation as needed */
+  font-style: italic;
+}

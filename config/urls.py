@@ -10,6 +10,7 @@ import courses.selfgrade.views
 
 urlpatterns = [
     path("", courses.selfgrade.views.single_course_view, name="home"),
+    path("phys-511", courses.selfgrade.views.course_detail, name="phys-511", kwargs={'course_id': 1}),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

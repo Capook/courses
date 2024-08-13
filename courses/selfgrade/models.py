@@ -111,6 +111,7 @@ class Course(models.Model):
     """
 
     name = models.CharField(max_length=100, help_text="The name of the course.")
+    shortname = models.CharField(max_length=10, help_text="A shorter name")
     description = models.TextField(
         blank=True,
         help_text="A description of the course content.",
@@ -141,6 +142,34 @@ class Registration(models.Model):
 
     def __str__(self):
         return f"{self.user} registered in {self.course}"
+
+    def get_percentage_grades(self):
+        """
+        return a dictionary with the percent grade for each assignment for the course
+        (keyed by name - make sure names are unique!)
+        along with key 'Total' giving the final assignment grade for this course
+        """
+        assignments = self.course.assignment_set.order_by('due_at')
+        submissions = self.submission_set.filter(registration=self)
+        percentage_grades = {}
+        for assignment in assignments:
+            submission = submissions.filter(assignment=assignment).first() #guarnateed unique - returns None if 0
+            if submission:
+                percentage_grade = submission.get_percentage_grade()
+            elif assignment.due_at < timezone.now():
+                percentage_grade = 0  # grade is zero if not submitted by deadline
+            else:
+                percentage_grade = None  # lack of submission is treated as none (drop grade) before deadline
+            percentage_grades[assignment.name] = percentage_grade
+        numeric_percentage_grades = [float(value) for value in percentage_grades.values() if value is not None]
+        numeric_percentage_grades_with_drop = sorted(numeric_percentage_grades)[2:] #drop lowest two
+        if numeric_percentage_grades_with_drop:
+            percentage_grades['Total'] = sum(numeric_percentage_grades_with_drop) / len(
+                numeric_percentage_grades_with_drop)
+        else:
+            percentage_grades['Total'] = 1
+
+        return percentage_grades
 
 
 class Assignment(models.Model):
@@ -357,6 +386,12 @@ class Submission(models.Model):
         blank=True,
         help_text="The date and time the submission was reviewed.  Null prior to review.",
     )
+    reviewed_by = models.ForeignKey(User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The user who reviewed the submission.",
+    )
     reviewer_comments = models.TextField(
         blank=True,
         help_text="Comments from the reviewer (TA or grader).",
@@ -372,14 +407,23 @@ class Submission(models.Model):
         return f"Submission for {self.assignment} by {self.registration.user}"
 
     def get_percentage_grade(self):
-        gradedparts = self.gradedpart_set
-        num_parts = gradedparts.count()
+        gradedparts = self.gradedpart_set.select_related()
+        num_gradedparts = gradedparts.count()
         num_graded = gradedparts.filter(grade__isnull=False).count()
-        if num_parts != num_graded:
+        #Do checks here because this is a grade that will be used
+        if num_gradedparts != num_graded:
             return None
         else:
-            qs = gradedparts.aggregate(total=Sum('points'),score=Sum('final'))
-            return qs['score']/qs['total']
+            #qs = gradedparts.aggregate(total=Sum('points'),score=Sum('final')) #can't use this b/c points is a property not a true field
+            score = 0
+            points = 0
+            for gradedpart in gradedparts:
+                score += gradedpart.grade
+                points += gradedpart.points
+            if points:
+                return float(score)/float(points)
+            else:
+                return None
 
 
 class GradedPart(models.Model):

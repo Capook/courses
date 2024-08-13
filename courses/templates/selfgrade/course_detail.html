@@ -14,16 +14,16 @@
         <h2 class="mb-3">{{ course.name }}</h2>
         <p>{{ course.description }}</p>
 
-        <hr>
-        <h3 class="mt-4">Class notes</h3>
-        <a href="https://sgralla.arizona.edu/taylor_series.pdf" target="_blank" class="btn btn-outline-secondary">Download
-          class notes</a>
-        <hr>
-        <h3 class="mt-3">Assignments</h3>
+{#        <hr>#}
+{#        <h3 class="mt-4">Class notes</h3>#}
+{#        <a href="https://sgralla.arizona.edu/taylor_series.pdf" target="_blank" class="btn btn-outline-secondary">Download#}
+{#          class notes</a>#}
+{#        <hr>#}
+{#        <h3 class="mt-3">Assignments</h3>#}
         {% if assignments %}
           <div class="accordion" id="assignmentsAccordion">
             {% for assignment in assignments %}
-              {% with submission=submissions|get_item:assignment.id %}
+              {% with submission=submissions|get_item:assignment.id %} {# template checks if there is a submission - was a gemini idea #}
                 <div class="accordion-item">
                   <h2 class="accordion-header" id="heading{{ assignment.id }}">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -67,17 +67,20 @@
                         <div class="card-body">
                           {% if assignment.is_after_deadline %}
                             {% if submission and submission.initial_submission %}
-                              <p>You submitted this assignment on {{ submission.submitted_at|date:"n/j g:i a" }}.</p>
+                              <p>You submitted this assignment
+                                on {{ submission.submitted_at|date:"n/j g:i a" }}.</p>
                               <a href="{{ submission.initial_submission.url }}" target="_blank" class="btn btn-link">View
                                 submission</a>
                             {% else %}
-                              <p>You missed the deadline for this assignment and did not submit.</p>
+                              <p>You did not submit this assignment.</p>
                             {% endif %}
                           {% else %} {# deadline has not passed yet  #}
                             {% if submission and submission.initial_submission %}
                               <div>You submitted this assignment on {{ submission.submitted_at|date:"n/j g:i a" }}
-                              You may update your submission until the deadline.</div>
-                              <a href="{{ submission.initial_submission.url }}" target="_blank" class="btn btn-link mb-2">View
+                                You may update your submission until the deadline.
+                              </div>
+                              <a href="{{ submission.initial_submission.url }}" target="_blank"
+                                 class="btn btn-link mb-2">View
                                 Submission</a>
                             {% endif %}
                             <form method="post" enctype="multipart/form-data">
@@ -88,7 +91,8 @@
                                 <span>{{ submission_form|crispy }}</span>
                                 <span class="ms-2">
                                   <button type="submit" class="btn btn-primary">
-                                    {% if submission and submission.initial_submission %}Update{% else %}Submit{% endif %}
+                                    {% if submission and submission.initial_submission %}Update{% else %}
+                                      Submit{% endif %}
                                   </button>
                                 </span>
                               </div>
@@ -104,14 +108,50 @@
                           {% if not assignment.is_after_deadline %}
                             Grading is not yet available
                           {% else %}
-                            {% if assignment.is_after_self_grading_deadline %}
-                              <div class="text-muted">
-                                check if grading was submitted and display grades
-                              </div>
-                            {% else %} {# grading deadline hasn't passed #}
+                            {% if assignment.is_after_self_grading_deadline and submission.reviewed_at %}
+                              <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}.
+                                It was reviewed on {{ submission.reviewed_at|date:"n/j g:i a" }}.</p>
+                              {% if submission.reviewer_comments %}
+                                Reviewer comments:
+                                <blockquote>
+                                  {{ submission.reviewer_comments }}
+                                </blockquote>
+                              {% endif %}
+                              <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">View
+                                graded submission</a>
+                              <table class="table">
+                                <thead>
+                                <tr>
+                                  <th scope="col">#</th>
+                                  <th scope="col">Points</th>
+                                  <th scope="col">Self grade</th>
+                                  <th scope="col">Final Grade</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for form in submission.grading_formset %}
+                                  {# use formset for loop even though we don't render forms #}
+                                  <tr>
+                                    <th scope="row">{{ form.instance.get_label_smart }}</th>
+                                    <td>{{ form.instance.points }}</td>
+                                    <td>{% if form.instance.self_grade is None %} --
+                                      {% else %}{{ form.instance.self_grade }}
+                                    {% endif %}</td>
+                                    {# don't render individual fields because hidden fields used by formset might be missing #}
+                                    <td>{% if form.instance.grade is None %} --
+                                      {% else %}{{ form.instance.grade }}
+                                    {% endif %}</td>
+                                  </tr>
+                                {% endfor %}
+                                </tbody>
+                              </table>
+
+                            {% else %}
+                              {# submission deadline past, but grading deadline not passed, or not reviewed yet #}
                               {% if submission %}
                                 {% if submission.graded_submission %}
-                                  <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}.</p>
+                                  <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}. You may
+                                    update your grading until the grading deadline.</p>
                                   <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">View
                                     graded submission</a>
                                 {% endif %}
@@ -135,8 +175,9 @@
                                           <td>{{ form.instance.points }}</td>
                                           <td>{% crispy form form.helper %}</td>
                                           {# don't render individual fields because hidden fields used by formset might be missing #}
-                                          <td>{% if form.instance.grade %}{{ form.instance.grade }}{% else %}
-                                            -- {% endif %}</td>
+                                          <td>{% if form.instance.grade is None %} --
+                                            {% else %}{{ form.instance.grade }}
+                                          {% endif %}</td>
                                         </tr>
                                       </div>
                                     {% endfor %}
@@ -145,10 +186,16 @@
                                   <div class="form-group">
                                     {{ graded_submission_form|crispy }}
                                   </div>
-
                                   <input type="hidden" name="grading_form_submit" value="true">
                                   <input type="hidden" name="assignment_id" value="{{ assignment.id }}"/>
-                                  <button type="submit" class="btn btn-primary">Submit grades</button>
+
+                                  <button type="submit" class="btn btn-primary">
+                                    {% if not submission.graded_submission %}
+                                      Submit grades
+                                    {% else %}
+                                      Update grades
+                                    {% endif %}
+                                  </button>
                                 </form>
                               {% else %} {#  no submission recorded #}
                                 You did not submit this assignment.
@@ -180,7 +227,7 @@
             <tbody>
             <tr>
               {% for value in percentage_grades.values %}
-                <td>{% if value %}{{ value }}{% else %}--{% endif %}</td>
+                <td>{% if value is None %} --{% else %} {% widthratio value 1 100 %}% {% endif %}</td>
               {% endfor %}
             </tr>
             </tbody>

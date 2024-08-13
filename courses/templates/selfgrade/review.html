@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+{% load tz %}
+
+{% block title %}
+  Review submission
+{% endblock title %}
+{% block content %}
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-8">
+        <h2 class="mb-3">Grading review</h2>
+
+        {# SUBMISSION INFORMATION #}
+        <div class="card mb-2" style="background: #FAFAFA">
+          <div class="card-header"><h5 class="card-title">Submission</h5></div>
+          <div class="card-body">
+            <table class="table">
+              <tbody>
+              <tr>
+                <th scope="row">Course</th>
+                <td>{{ submission.registration.course.name }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Assignment</th>
+                <td>{{ submission.assignment.name }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Student</th>
+                <td>{{ submission.registration.user }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Due</th>
+                <td>{{ submission.assignment.due_at }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Submitted</th>
+                <td>{{ submission.submitted_at }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Self Grading due</th>
+                <td>{{ submission.assignment.self_grades_due_at }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Self Grading submitted</th>
+                <td>{{ submission.graded_at }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Reviewed</th>
+                <td>{{ submission.reviewed_at }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Reviewed by</th>
+                <td>{{ submission.reviewed_by }}</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {# Files #}
+
+        <div class="card mb-2" style="background: ghostwhite">
+          <div class="card-header"><h5>Files</h5></div>
+          <div class="card-body d-flex justify-content-evenly">
+            {% if submission.assignment.statement_pdf %}
+              <a href="{{ submission.assignment.statement_pdf.url }}" target="_blank"
+                 class="btn btn-link">assignment</a>
+            {% else %}
+              Assignment is not yet available
+            {% endif %}
+            {% if submission.assignment.solution_pdf %}
+              <a href="{{ submission.assignment.solution_pdf.url }}" target="_blank" class="btn btn-link">solutions</a>
+            {% else %}
+              Solutions not available yet
+            {% endif %}
+            {% if submission.initial_submission %}
+              <a href="{{ submission.initial_submission.url }}" target="_blank" class="btn btn-link">submission</a>
+            {% else %}
+              No submission
+            {% endif %}
+            {% if submission.graded_submission %}
+              <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">graded
+                submission</a>
+            {% else %}
+              No graded submission
+            {% endif %}
+          </div>
+        </div>
+        <div class="card mb-2">
+          <div class="card-header"><h5>PDF preview - graded submission</h5></div>
+          <div class="card-body">
+          <div id="adobe-dc-view" style="width:100%; aspect-ratio: 8.5/11"></div>{# the height and width tell teh adobe sized container what to do #}
+            </div>
+        </div>
+        {# REVIEW FORM #}
+        <div class="card" style="background: aliceblue">
+          <div class="card-header"><h5 class="card-title">Review</h5></div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              {{ review_formset.management_form }}
+              {% if review.formset.errors %}{{ review_formset.errors }}{% endif %}
+              <table class="table">
+                <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Points</th>
+                  <th scope="col">Self grade</th>
+                  <th scope="col">Final Grade</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for form in review_formset %}
+                  <div class="form-group">
+                    <tr>
+                      <th scope="row">{{ form.instance.get_label_smart }}</th>
+                      <td>{{ form.instance.points }}</td>
+                      <td>{% if form.instance.self_grade %}{{ form.instance.self_grade }}{% else %} -- {% endif %}</td>
+                      <td>{% crispy form form.helper %}</td>
+                      {# don't render individual fields because hidden fields used by formset might be missing #}
+                    </tr>
+                  </div>
+                {% endfor %}
+                </tbody>
+              </table>
+              <div class="form-group">
+                {{ reviewer_comments_form|crispy }}
+              </div>
+              <button type="submit" class="btn btn-primary">
+                {% if submission.reviewed_at %}
+                  Update review
+                {% else %}
+                  Submit review
+                {% endif %}
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+ <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
+ <script type="text/javascript">
+    document.addEventListener("adobe_dc_view_sdk.ready", function()
+    {
+        var adobeDCView = new AdobeDC.View({clientId: "{{ adobe_api_key }}", divId: "adobe-dc-view"});
+        adobeDCView.previewFile(
+       {
+          content:   {location: {url: " {{ submission.graded_submission.url }} "} },
+          metaData: {fileName: "graded submission.pdf"},
+       },
+          {embedMode: "FULL_WINDOW", showAnnotationTools: true}); {# sized container mode doesn't show annotations #}
+    });
+ </script>
+
+  {# remove the mb-3 rendered by crispy in the outer div.  can't find a way to do it within crispy #}
+  <script>
+    const elements = document.querySelectorAll('[id^="div_id_gradedpart_set-"][id$="-grade"]');
+
+    elements.forEach(element => {
+      element.classList.remove('mb-3');
+    });
+  </script>
+{% endblock content %}
