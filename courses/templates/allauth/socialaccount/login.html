@@ -5,8 +5,10 @@
     {% trans "Sign In" %}
 {% endblock head_title %}
 {% block content %}
-  You will access this app using your university of arizona login.  The flow is that you sign in via Google but enter your Official Arizona email.
-    {% if process == "connect" %}
+  {% element p %}
+    You will access this app using your university of arizona login.  The flow is that you sign in via Google but enter your Official Arizona email.
+  {% endelement %}
+  {% if process == "connect" %}
         {% element h1 %}
             {% blocktrans with provider.name as provider %}Connect {{ provider }}{% endblocktrans %}
         {% endelement %}
