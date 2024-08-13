@@ -67,33 +67,9 @@ INSTALLED_APPS += ["django_extensions"]
 # Your stuff...
 # ------------------------------------------------------------------------------
 
-#local time zone - should probably put this in base.py since production will use it too
-TIME_ZONE = 'America/Phoenix'
-
 # Django tex
 LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
 LATEX_GRAPHICSPATH = ['C:/Dropbox/work/notes/CMbook/images']
 
 # My custom
 LATEX_AUX_FILE = 'C:/Dropbox/work/notes/CMbook/auxil/CM' #don't include .aux
-
-#remove after testing s3
-# STATIC & MEDIA
-# ------------------------
-# STORAGES = {
-#     'default': {
-#         'BACKEND': 'storages.backends.s3.S3Storage',
-#         # Add other S3 configuration options as needed (region, etc.)
-#     },
-#     'staticfiles': {
-#         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
-#     },
-# }
-#
-# AWS_ACCESS_KEY_ID = env('DJANGO_AWS_ACCESS_KEY_ID')
-# AWS_SECRET_ACCESS_KEY = env('DJANGO_AWS_SECRET_ACCESS_KEY')
-# AWS_STORAGE_BUCKET_NAME = env('DJANGO_AWS_STORAGE_BUCKET_NAME')
-# AWS_CUSTOM_DOMAIN = env('DJANGO_AWS_CUSTOM_DOMAIN')
-# AWS_REGION_NAME = env('DJANGO_AWS_REGION_NAME')
-# PUBLIC_MEDIA_LOCATION = 'media'
-# MEDIA_URL = f'https://{AWS_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
