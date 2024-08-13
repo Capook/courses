@@ -74,9 +74,9 @@ class Problem(models.Model):
     def compile_statement(self):
         """
         Compile the statement tex and save to the statement_pdf field.
-        Add uuid to filename since it will be in a public media directory.
+        Add uuid to filename since it might be in a public media directory.
         (The filename is then not revealed unless the app wants to.)
-        No latex error handling atm.
+        No latex error handling atm. I made some changes to the bare package django_tex core.py... careful
         """
         template_name = 'selfgrade/tex/problem_statement.tex'
         context = {'problem': self, 'aux_absolute_path': settings.LATEX_AUX_FILE}

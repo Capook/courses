@@ -28,7 +28,7 @@ def compile_problem_tex_action(modeladmin, request, queryset):
         problem.compile_statement()
         problem.compile_solution()
 
-    modeladmin.message_user(request, 'PDFs saved successfully.')
+    modeladmin.message_user(request, 'PDFs saved.  Logs probably under /static/texput.log')
     return HttpResponseRedirect(reverse('admin:selfgrade_problem_changelist'))  # Redirect back to the changelist view
 
 @admin.register(Problem)
@@ -67,7 +67,7 @@ def compile_assignment_tex_action(modeladmin, request, queryset):
         assignment.compile_statement()
         assignment.compile_solution()
 
-    modeladmin.message_user(request, 'PDFs saved successfully.')
+    modeladmin.message_user(request, 'PDFs saved.  Logs probably under /static/texput.log')
     return HttpResponseRedirect(reverse('admin:selfgrade_assignment_changelist'))  # Redirect back to the changelist view
 
 @admin.register(Assignment)
