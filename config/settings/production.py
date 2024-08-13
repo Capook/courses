@@ -186,8 +186,7 @@ sentry_sdk.init(
 )
 
 
-# Your stuff...
-# ------------------------------------------------------------------------------
+# All auth
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [
@@ -200,3 +199,5 @@ SOCIALACCOUNT_PROVIDERS = {
         'OAUTH_PKCE_ENABLED': True,
     }
 }
+
+SOCIALACCOUNT_ONLY = True
