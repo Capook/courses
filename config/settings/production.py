@@ -85,7 +85,7 @@ STORAGES = {
     },
 }
 
-STATIC_ROOT = '/var/www/static' #moo
+STATIC_ROOT = '/var/www/courses/static'
 
 # EMAIL
 # ------------------------------------------------------------------------------
