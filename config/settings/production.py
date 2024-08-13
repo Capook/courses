@@ -202,3 +202,10 @@ SOCIALACCOUNT_PROVIDERS = {
 
 #This removes signup view so make sure it isn't referenced
 SOCIALACCOUNT_ONLY = True
+
+# Django tex
+LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
+LATEX_GRAPHICSPATH = ['/home/sgralla/CMbook/images']
+
+# My custom
+LATEX_AUX_FILE = '/home/sgralla/CMbook/auxil/CM' #don't include .aux
