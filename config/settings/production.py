@@ -113,7 +113,7 @@ EMAIL_SUBJECT_PREFIX = env(
 ADMIN_URL = env("DJANGO_ADMIN_URL")
 
 # Production apps
-INSTALLED_APPS += ["anymail", "storages"]
+INSTALLED_APPS += ["anymail", "storages", "allauth.socialaccount.providers.google"]
 
 
 # Anymail
@@ -188,3 +188,15 @@ sentry_sdk.init(
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
