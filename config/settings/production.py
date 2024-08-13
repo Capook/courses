@@ -113,7 +113,7 @@ EMAIL_SUBJECT_PREFIX = env(
 ADMIN_URL = env("DJANGO_ADMIN_URL")
 
 # Production apps
-INSTALLED_APPS += ["anymail", "storages", "allauth.socialaccount.providers.google"]
+INSTALLED_APPS += ["anymail", "storages"]
 
 
 # Anymail
