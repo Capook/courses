@@ -99,7 +99,9 @@
                   <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
                 </li>
               {% else %}
-                {% if ACCOUNT_ALLOW_REGISTRATION %}
+                {% if ACCOUNT_ALLOW_REGISTRATION and debug %}
+                  {# debug is a hack to check if we're in production or not #}
+                  {# I disable local signup in production #}
                   <li class="nav-item">
                     {# URL provided by django-allauth/account/urls.py #}
                     <a id="sign-up-link" class="nav-link"

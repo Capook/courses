@@ -200,4 +200,5 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-#SOCIALACCOUNT_ONLY = True
+#This removes signup view so make sure it isn't referenced
+SOCIALACCOUNT_ONLY = True
