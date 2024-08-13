@@ -14,9 +14,7 @@
 {% graphicspath %}
 
 {# relative path does not work; raw is needed  #}
-{#https://tex.stackexchange.com/questions/21904/input-and-absolute-paths #}
-\makeatletter
-\def\@input@path{ { {{- aux_absolute_path -}} } }
-{# or: \def\input@path{{/path/to/folder/}{/path/to/other/folder/}} #}
-\makeatother
+{# And actually even this doesn't work on servier for some reason #}
+{# I copied and pasted the absolute path into the CM.auxil file there ... #}
+
 \externaldocument{ {{- aux_absolute_path -}} }
