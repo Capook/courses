@@ -112,10 +112,13 @@ EMAIL_SUBJECT_PREFIX = env(
 # Django Admin URL regex.
 ADMIN_URL = env("DJANGO_ADMIN_URL")
 
+# Production apps
+INSTALLED_APPS += ["anymail", "storages", "allauth.socialaccount.providers.google"]
+
+
 # Anymail
 # ------------------------------------------------------------------------------
 # https://anymail.readthedocs.io/en/stable/installation/#installing-anymail
-INSTALLED_APPS += ["anymail", "storages"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
 # https://anymail.readthedocs.io/en/stable/installation/#anymail-settings-reference
 # https://anymail.readthedocs.io/en/stable/esps/mailgun/
