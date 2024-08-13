@@ -74,16 +74,21 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
 # ------------------------
 STORAGES = {
     'default': {
-        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
-        'AWS_ACCESS_KEY_ID': env('DJANGO_AWS_ACCESS_KEY_ID'),
-        'AWS_SECRET_ACCESS_KEY': env('DJANGO_AWS_SECRET_ACCESS_KEY'),
-        'AWS_STORAGE_BUCKET_NAME': env('DJANGO_AWS_STORAGE_BUCKET_NAME'),
+        'BACKEND': 'storages.backends.s3.S3Storage',
         # Add other S3 configuration options as needed (region, etc.)
     },
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     },
 }
+
+AWS_ACCESS_KEY_ID = env('DJANGO_AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('DJANGO_AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('DJANGO_AWS_STORAGE_BUCKET_NAME')
+AWS_CUSTOM_DOMAIN = env('DJANGO_AWS_CUSTOM_DOMAIN')
+AWS_REGION_NAME = env('DJANGO_AWS_REGION_NAME')
+PUBLIC_MEDIA_LOCATION = 'media'
+MEDIA_URL = f'https://{AWS_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
 
 STATIC_ROOT = '/var/www/courses/static'
 
