@@ -108,10 +108,21 @@
                        href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
                   </li>
                 {% endif %}
+                {% if debug %}
+                  {# same garbage hack to find out if we're local or production #}
                 <li class="nav-item">
                   {# URL provided by django-allauth/account/urls.py #}
                   <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
                 </li>
+                  {% else %}
+                  <li class="nav-item">
+                  {# URL provided by django-allauth/account/urls.py #}
+                    {# if production, hack to get straight to overloaded login template #}
+                  <a id="log-in-link" class="nav-link" href="https://courses.samgralla.me/accounts/google/login/?process=login">
+                    {% translate "Sign In" %}</a>
+                </li>
+
+                  {% endif %}
               {% endif %}
             </ul>
           </div>
