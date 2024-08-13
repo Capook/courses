@@ -5,6 +5,7 @@
   {% trans "Sign In" %}
 {% endblock head_title %}
 {% block content %}
+  <h1>Log in with your university email</h1>
   <p>
     You will access the system using your University of Arizona login.
     The flow is that you sign in via Google but enter your official Arizona email, netid@arizona.edu.
@@ -17,7 +18,7 @@
     {% slot actions %}
       {% csrf_token %}
       {% element button type="submit" %}
-        {% trans "Continue" %}
+        {% trans "Continue to google" %}
       {% endelement %}
     {% endslot %}
   {% endelement %}
