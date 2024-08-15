@@ -207,5 +207,9 @@ SOCIALACCOUNT_ONLY = True
 LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
 LATEX_GRAPHICSPATH = ['/home/sgralla/CMbook/images']
 
+#allauth is too confusing - dont see how to programmatically generate the url
+#so in production just have a hardcord login
+LOGIN_URL = "https://courses.samgralla.me/accounts/google/login/?process=login"
+
 # My custom
 LATEX_AUX_FILE = '/home/sgralla/CMbook/auxil/CM' #don't include .aux
