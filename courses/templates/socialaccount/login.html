@@ -9,10 +9,10 @@
   <h1>Log in with your university email</h1>
   <p>
     This is the homework submission system for PHYS 511.  To access the system you will use your University of Arizona login,
-    but the flow is handled by Google (which runs your email under the hood).  Click "continue to google" below, but when
+    but the flow is handled by Google (which runs your email under the hood).  Click "continue to Google" below, but when
     prompted to enter an email address, enter your official Arizona email, netid@arizona.edu.
     This will take you to the login flow for the University of Arizona and return you to this website when logged in.  </p>
-  <h3 class="mb-2">Enter your <span
+  <h3>Enter your <span
     style="text-decoration: underline">netid@arizona.edu</span> email when prompted to sign in via Google.
   </h3>
 
@@ -20,7 +20,7 @@
     {% slot actions %}
       {% csrf_token %}
       {% element button type="submit" %}
-        {% trans "Continue to google" %}
+        {% trans "Continue to Google" %}
       {% endelement %}
     {% endslot %}
   {% endelement %}
