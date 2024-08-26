@@ -1,8 +1,14 @@
 \usepackage{amsmath}
+\usepackage{amsfonts}
 \usepackage{xr}
 \usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{bm}
 
 
+\newlist{problems}{enumerate}{2}
+\setlist[problems,1]{label=\arabic*}
+\setlist[problems,2]{label=(\emph{\alph*})}
 
 {# raw because of the symbol { then # needed  #}
 {% raw %}

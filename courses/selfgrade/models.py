@@ -184,6 +184,10 @@ class Assignment(models.Model):
         max_length=100,
         help_text="The name or title of the assignment.",
     )
+    description = models.TextField(
+        blank=True,
+        help_text="A description of the assignment.",
+    )
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,

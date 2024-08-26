@@ -69,7 +69,7 @@ INSTALLED_APPS += ["django_extensions"]
 
 # Django tex
 LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
-LATEX_GRAPHICSPATH = ['C:/Dropbox/work/notes/CMbook/images']
+LATEX_GRAPHICSPATH = ['C:/Dropbox/work/notes/CMbook'] #they are really in images/ (put in by hand because that's how my book is set up)
 
 # My custom
 LATEX_AUX_FILE = 'C:/Dropbox/work/notes/CMbook/auxil/CM' #don't include .aux

@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-
+\usepackage[margin=1in,letterpaper]{geometry}
 {% include "selfgrade/tex/commands.tex" %}
 
 % Document
@@ -8,10 +8,22 @@
 
 \section*{ {{- problem.name -}} }
 
-{{- problem.statement_tex -}}
+\begin{problems}
+
+    \item[] % make sure any \begin{problems} inside the problem are ordered according to level 2
+
+{{ problem.statement_tex }} %Do not use the whitespace trimming version inside this item.  It cuts out the top part for some reason
+
+\end{problems}
 
 \section*{Solution}
 
-{{- problem.solution_tex -}}
+\begin{problems}
+
+    \item[] % make sure any \begin{problems} inside the problem are ordered according to level 2
+
+{{ problem.solution_tex }} %Do not use the whitespace trimming version inside this item.  It cuts out the top part for some reason
+
+\end{problems}
 
 \end{document}

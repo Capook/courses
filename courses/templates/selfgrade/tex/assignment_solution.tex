@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-
+\usepackage[margin=1in,letterpaper]{geometry}
 {% include "selfgrade/tex/commands.tex" %}
 
 % Document
@@ -8,13 +8,13 @@
 \textbf{ \LARGE Solution set: {{assignment.name}} }
 \end{center}
 
-\begin{enumerate}
+\begin{problems}
 {# explicit function call () is used in jinja #}
 {% for assignedproblem in assignment.assignedproblem_set.all() %}
     {# Would be good to generate unique label names to avoid conflicts between problems with the same label name #}
     \item \textbf{ {{ assignedproblem.name }} } \par {{ assignedproblem.statement_tex }} \par
     \vspace{.2cm}\textit{Solution} \par \vspace{.2cm}{{ assignedproblem.solution_tex }}
 {% endfor %}
-\end{enumerate}
+\end{problems}
 
 \end{document}

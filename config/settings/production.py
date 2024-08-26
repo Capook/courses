@@ -205,7 +205,7 @@ SOCIALACCOUNT_ONLY = True
 
 # Django tex
 LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
-LATEX_GRAPHICSPATH = ['/home/sgralla/CMbook/images']
+LATEX_GRAPHICSPATH = ['/home/sgralla/CMbook'] #they are really in images/ (put in by hand because that's how my book is set up)
 
 #allauth is too confusing - dont see how to programmatically generate the url
 #so in production just have a hardcord login
