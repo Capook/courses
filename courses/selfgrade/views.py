@@ -181,3 +181,6 @@ def grade_report(request, course_id):
     context = {'headers': headers, 'data': data} #django template logic is limited... pass keys here
 
     return render(request,"selfgrade/grade_report.html", context )
+
+def grading_instructions(request):
+    return render(request, "selfgrade/grading_instructions.html", {})

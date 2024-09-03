@@ -103,7 +103,11 @@
 
                       {# GRADING #}
                       <div class="card mt-2" style="background: aliceblue">
-                        <div class="card-header"><h5 class="card-title">Grading</h5></div>
+                        <div class="card-header"><h5 class="card-title"><div class="d-flex justify-content-between w-100">
+                        <span>Grading</span>
+                        <span class="me-3"><a target="_blank" style="font-size: 11pt" href="{% url 'selfgrade:grading_instructions' %}">rubric and instructions</a></span>
+                      </div>
+                          </h5></div>
                         <div class="card-body">
                           {% if not assignment.is_after_deadline %}
                             Grading is not yet available

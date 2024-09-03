@@ -1,0 +1,103 @@
+{% load static i18n %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Grading instructions</title>
+
+
+    <!-- Latest compiled and minified Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
+          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"/>
+    <!-- Your stuff: Third-party CSS libraries go here -->
+    <!-- This file stores project-specific CSS -->
+
+
+    <link href="{% static 'css/project.css' %}" rel="stylesheet"/>
+
+
+
+  <!-- Le javascript
+      ================================================== -->
+  {# Placed at the top of the document so pages load faster with defer #}
+
+
+
+    <!-- Bootstrap JS -->
+    <script defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
+            integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <!-- Your stuff: Third-party javascript libraries go here -->
+
+
+    <!-- place project specific Javascript in this file -->
+
+
+    <script defer src="{% static 'js/project.js' %}"></script>
+
+
+
+</head>
+<body>
+<div class="container">
+<h3>Grading instructions</h3>
+<p><i>These instructions are the same for every homework assignment, so once you are familiar with them, you do not need to
+  keep opening this page.</i>
+
+<p>Each lettered part of each problem is worth 4 points.  The table below describes the rubric along with the annotations you must make to support your self-assessment grade. </p>
+<ul class="list-group mb-3 ms-3" style="max-width: 800px">
+  <li class="list-group-item"> Correct (4 points)
+    <ul>
+      <li>Your solution has a <b>correct method</b> and a <b>correct answer</b>.</li>
+      <li>In your annotations, explain any differences from the posted solution. If your method is different from the
+        solutions, explain the difference. If your answer is not obviously the same, explain what you did to confirm
+        that it is indeed the same.
+      </li>
+    </ul>
+  <li class="list-group-item" > Minor mistake (3 points)
+    <ul>
+      <li>Your solution has a <b>correct method</b>, but there can be a minor math mistake.</li>
+      <li>In your annotations, circle the math mistake. Describe how fixing the mistake gives you the correct answer.
+        (You should carefully redo the calculation, but you do not need to show me this work. Just briefly describe what
+        changes.) If your method is different from the solutions, explain the difference.
+      </li>
+    </ul>
+  <li class="list-group-item"> Major mistake (2 points)
+    <ul>
+      <li>Either your solution uses an <b>incorrect method</b>, or it sets problem up correctly but does <b>not complete
+        the calculation</b> to obtain a final answer.
+      </li>
+      <li>In your annotations, explain what went wrong and how you would correctly solve the problem. (You should
+        carefully redo the problem, but you do not need to show me this work.)
+      </li>
+    </ul>
+  <li class="list-group-item"> Deficient (1 point)
+    <ul>
+      <li>Your solution is <b>blank</b> or just contains a <b>few equations and/or
+        concepts</b>.
+      </li>
+      <li>In your annotations, explain how you would correctly solve the problem. (You should carefully solve the
+        problem, but you do not need to show me this work.)
+      </li>
+    </ul>
+</ul>
+<p>Notice that you still get a point even if you did not solve the problem; this is credit for the grading
+  annotation you will include (explaining how to solve the problem).
+
+<p>The grader will review and finalize your scores each time, adjusting if necessary. There is no penalty for adjustment
+  if the grading was done in good faith, but if your scores are obviously inconsistent with the rubric, or
+  if you lack clear annotations supporting them, a grade of 0 may be assigned, either for individual problems or the
+  entire problem set.
+  More severe penalities may be imposed for repeat offenders.
+
+<p style="color:darkred"><b>Important:</b> Do not upload a brand new pdf file. Instead, re-upload the original pdf together with new
+  annotations. Use the annotate feature of acrobat reader or acrobat pro.</p>
+
+  <p>Thanks for your cooperation!</p>
+</div>
+</body>
+</html>
