@@ -149,7 +149,7 @@
         var adobeDCView = new AdobeDC.View({clientId: "{{ adobe_api_key }}", divId: "adobe-dc-view"});
         adobeDCView.previewFile(
        {
-          content:   {location: {url: " {{ submission.graded_submission.url }} "} },
+          content:   {location: {url: "{{ submission.graded_submission.url }}"} },
           metaData: {fileName: "graded submission.pdf"},
        },
           {embedMode: "FULL_WINDOW", showAnnotationTools: true}); {# sized container mode doesn't show annotations #}
