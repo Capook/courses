@@ -72,7 +72,10 @@ class ReviewInlineFormSet(BaseInlineFormSet):
 
             if form.instance.id: #avoid erors in case the instance is fake - should not happen
                 # fill in selfgrade as initial if it hasn't been reveiwed yet
-                if not form.instance.grade:
+                # Don't use if form.instance.grade as it could be 0
+                # NOTE: If user doesn't edit the initial, it will NOT be saved by default because django thinks it hasn't changed
+                # I explicitly overrode the fields changed property in my form processing
+                if form.instance.grade is None:
                     form.initial['grade'] = form.instance.self_grade
                 form.fields['grade'].widget.attrs['max'] = form.instance.points
 

@@ -144,6 +144,11 @@ def review(request, submission_id):
     if request.method == "POST":
         reviewer_comments_form = ReviewerCommentsForm(request.POST, instance=submission)
         review_formset = ReviewFormSet(request.POST, instance=submission)
+        #because of my hand-input initial value in the formset constructor, django sometimes thinks that form data
+        #has not changed and therefore refuses to save it.  This forces it to change.
+        #see https://stackoverflow.com/questions/18355976/django-formset-data-does-not-get-saved-when-initial-values-are-provided
+        for form in review_formset.forms:
+            form.changed_data = ['grade']
         if reviewer_comments_form.is_valid() and review_formset.is_valid():
             reviewer_comments_form.save()
             review_formset.save()
