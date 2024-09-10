@@ -165,9 +165,8 @@
                                     {{ assignment.self_grades_due_at|date:"n/j g:i a" }}.</p>
                                   <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">View
                                     graded submission</a>
-                                  {% else %}
-                                    <p>Grading for this assignment is due {{ assignment.self_grades_due_at|date:"n/j g:i a" }}.</p>
-                                  {% endif %}
+                                {% else %}
+                                  <p>Grading for this assignment is due {{ assignment.self_grades_due_at|date:"n/j g:i a" }}.</p>
                                 {% endif %}
                                 <form method="post" enctype="multipart/form-data">
                                   {% csrf_token %}
