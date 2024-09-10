@@ -112,14 +112,13 @@
                           {% if not assignment.is_after_deadline %}
                             Grading is not yet available
                           {% else %}
-                            {% if assignment.is_after_self_grading_deadline and submission.reviewed_at %}
-                              {# after submission deadline and grading deadline, and has been reviewed #}
+                            {% if submission.reviewed_at %} {# if reviewed, do not allow submission #}
                               <p>
                                 {% if submission.graded_at and submission.graded_submission %}
                                   You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}.
                                   It was reviewed on {{ submission.reviewed_at|date:"n/j g:i a" }}.
                                 {% else %}
-                                  You did not submit your grading before the deadline.
+                                  You did not submit your grading.
                                 {% endif %}
                               </p>
                               {% if submission.reviewer_comments %}
@@ -158,9 +157,7 @@
                                 {% endfor %}
                                 </tbody>
                               </table>
-
-                            {% else %}
-                              {# submission deadline past, but grading deadline not passed, or not reviewed yet #}
+                            {% else %} {# not reviewed yet - allow submission until review #}
                               {% if submission %}
                                 {% if submission.graded_submission %}
                                   <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}. You may
