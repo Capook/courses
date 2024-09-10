@@ -161,7 +161,8 @@
                               {% if submission %}
                                 {% if submission.graded_submission %}
                                   <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}. You may
-                                    update your grading until the grading deadline.</p>
+                                    update your grading until it has been reviewed.  Review will take place after the grading deadline of
+                                    {{ submission.grades_due_at|date:"n/j g:i a" }}.</p>
                                   <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">View
                                     graded submission</a>
                                 {% endif %}
