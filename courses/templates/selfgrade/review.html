@@ -142,6 +142,7 @@
       </div>
     </div>
   </div>
+  {% if submission.graded_submission %}
  <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
  <script type="text/javascript">
     document.addEventListener("adobe_dc_view_sdk.ready", function()
@@ -149,12 +150,13 @@
         var adobeDCView = new AdobeDC.View({clientId: "{{ adobe_api_key }}", divId: "adobe-dc-view"});
         adobeDCView.previewFile(
        {
-          content:   {location: {url: "{{ submission.graded_submission.url|safe }}"} }, {# safe to prevent &amp #}
+          content:   {location: {url: "{{ submission.graded_submission.url|safe }}"} }, {# safe to prevent &amp - might not be necessary though #}
           metaData: {fileName: "graded_submission.pdf"},
        },
           {embedMode: "FULL_WINDOW", showAnnotationTools: true}); {# sized container mode doesn't show annotations #}
     });
  </script>
+  {% endif %}
 
   {# remove the mb-3 rendered by crispy in the outer div.  can't find a way to do it within crispy #}
   <script>
