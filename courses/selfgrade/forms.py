@@ -36,7 +36,7 @@ class GradedSubmissionForm(forms.ModelForm):
         model = Submission
         fields = ["graded_submission"]
         labels = {"graded_submission":'Supporting annotations'}
-        help_texts = {"graded_submission": 'Upload an annotated version of the same PDF you originally submitted for this assignment.  The annotations should be immediately visible--large and in a different color like red.  They should support your scores entered above.  Do not edit the PDF content; instead use annotations and upload here.'}
+        help_texts = {"graded_submission": 'Upload an annotated version of the same PDF you originally submitted for this assignment.  The annotations should be immediately visible--large and in a different color like red.  They should support your scores entered above.'}
         widgets = {
             "graded_submission": forms.ClearableFileInput(
                 attrs={"accept": "application/pdf"},
