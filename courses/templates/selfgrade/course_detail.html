@@ -162,9 +162,12 @@
                                 {% if submission.graded_submission %}
                                   <p>You submitted your grading on {{ submission.graded_at|date:"n/j g:i a" }}. You may
                                     update your grading until it has been reviewed.  Review will take place after the grading deadline of
-                                    {{ assignment.grades_due_at|date:"n/j g:i a" }}.</p>
+                                    {{ assignment.self_grades_due_at|date:"n/j g:i a" }}.</p>
                                   <a href="{{ submission.graded_submission.url }}" target="_blank" class="btn btn-link">View
                                     graded submission</a>
+                                  {% else %}
+                                    <p>Grading for this assignment is due {{ assignment.self_grades_due_at|date:"n/j g:i a" }}.</p>
+                                  {% endif %}
                                 {% endif %}
                                 <form method="post" enctype="multipart/form-data">
                                   {% csrf_token %}
