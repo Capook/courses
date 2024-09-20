@@ -59,8 +59,9 @@ def course_detail(request, course_id):
         if submissions[assignment.id]:
             submissions[assignment.id].grading_formset = GradingFormSet(instance=submissions[assignment.id])
 
-    grading_scheme = 'Total is calculated as the average of homework percentages, dropping the two lowest scores.'
-    percentage_grades = registration.get_assignment_grades()
+    assignment_grading_scheme = 'Total is calculated as the average of homework percentages, dropping the two lowest scores.'
+    percentage_grades = registration.get_assignment_grades() #assignment grades
+    grading_scheme = 'Total is calculated as the weighted average: Assignments 20%, quizzes each 5%, midterm is 25%, final 30%.  You are guaranteed to receive an A/B/C/D if your total is at least 85/70/60/50.'
     grades = registration.get_grades()
 
     #this was Gemini's idea to have one generic form
@@ -117,7 +118,8 @@ def course_detail(request, course_id):
         "submissions": submissions,
         "percentage_grades": percentage_grades,
         "grades": grades,
-        "grading_scheme": grading_scheme,
+        "assignment_grading_scheme": assignment_grading_scheme,
+        "grading_scheme": grading_scheme
     }
     return render(request, "selfgrade/course_detail.html", context)
 
