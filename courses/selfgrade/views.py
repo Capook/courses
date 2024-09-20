@@ -1,12 +1,14 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.utils import timezone
 from django.contrib import messages
 from django.conf import settings
+
+import csv
 
 from .forms import SubmissionForm, GradedSubmissionForm, GradingFormSet, ReviewerCommentsForm, ReviewFormSet
 from .models import Assignment
@@ -57,8 +59,9 @@ def course_detail(request, course_id):
         if submissions[assignment.id]:
             submissions[assignment.id].grading_formset = GradingFormSet(instance=submissions[assignment.id])
 
-    grading_scheme = 'Total is calculated as the average of homework percentages, dropping the two lowest scores.  This is the grade that will count as your homework grade in the overall class grade.'
-    percentage_grades = registration.get_percentage_grades()
+    grading_scheme = 'Total is calculated as the average of homework percentages, dropping the two lowest scores.'
+    percentage_grades = registration.get_assignment_grades()
+    grades = registration.get_grades()
 
     #this was Gemini's idea to have one generic form
     #template renders one for each assignment, adding assignment_id.
@@ -113,6 +116,7 @@ def course_detail(request, course_id):
         "graded_submission_form": graded_submission_form,
         "submissions": submissions,
         "percentage_grades": percentage_grades,
+        "grades": grades,
         "grading_scheme": grading_scheme,
     }
     return render(request, "selfgrade/course_detail.html", context)
@@ -178,7 +182,7 @@ def grade_report(request, course_id):
     if registrations:
         for registration in registrations:
             row = [registration.user.email]
-            pg = registration.get_percentage_grades()
+            pg = registration.get_assignment_grades()
             row = row + list(pg.values())
             data.append(row)
         headers = ['Email'] + list(pg.keys())
@@ -186,6 +190,29 @@ def grade_report(request, course_id):
     context = {'headers': headers, 'data': data} #django template logic is limited... pass keys here
 
     return render(request,"selfgrade/grade_report.html", context )
+
+@staff_member_required()
+def assignment_grades_csv(request, course_id):
+    registrations = Registration.objects.filter(course_id=course_id)
+
+    headers = []
+    data = []
+    if registrations:
+        for registration in registrations:
+            row = [registration.user.last_name, registration.user.first_name, registration.user.email]
+            pg = registration.get_assignment_grades()
+            row = row + list(pg.values())
+            data.append(row)
+        headers = ['Last name', 'First name', 'Email'] + list(pg.keys())
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="output.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    writer.writerows(data)
+
+    return response
 
 def grading_instructions(request):
     return render(request, "selfgrade/grading_instructions.html", {})

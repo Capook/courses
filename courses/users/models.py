@@ -37,3 +37,6 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"pk": self.id})
+
+    def __str__(self):
+        return f'{self.name} ({self.email})'

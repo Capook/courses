@@ -1,5 +1,5 @@
 from django.db.models.signals import post_save, pre_delete
-from .models import Submission, GradedPart, Problem, AssignedPart, AssignedProblem
+from .models import Submission, GradedPart, Problem, AssignedPart, AssignedProblem, Registration, Test, GradedTest
 from django.core.exceptions import ValidationError
 
 def create_assigned_parts(sender, instance, created, **kwargs):
@@ -14,7 +14,6 @@ def create_assigned_parts(sender, instance, created, **kwargs):
 
 
 post_save.connect(create_assigned_parts, sender=AssignedProblem)
-
 
 def create_graded_parts(sender, instance, created, **kwargs):
     """
@@ -33,3 +32,23 @@ def create_graded_parts(sender, instance, created, **kwargs):
                 graded_part.save()
 
 post_save.connect(create_graded_parts, sender=Submission)
+
+def create_graded_tests(sender, instance, created, **kwargs):
+    """
+    Create graded tests when a Test object is created
+    """
+    if created:
+        for registration in Registration.objects.filter(course=instance.course):
+            GradedTest.objects.create(registration=registration, test=instance)
+
+post_save.connect(create_graded_tests, sender=Test)
+
+def create_graded_tests_for_user(sender, instance, created, **kwargs):
+    """
+    Create graded tests when a student is registered
+    """
+    if created:
+        for test in Test.objects.filter(course=instance.course):
+            GradedTest.objects.create(registration=instance, test=test)
+
+post_save.connect(create_graded_tests_for_user, sender=Registration)

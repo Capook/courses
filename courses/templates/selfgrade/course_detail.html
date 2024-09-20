@@ -249,6 +249,28 @@
         {% else %}
           <p>No grades available</p>
         {% endif %}
+        <hr>
+        <h3>Grade Summary</h3>
+        {% if grades %}
+          <table class="table">
+            <thead>
+            <tr>
+              {% for key in grades.keys %}
+                <th>{{ key }}</th>
+              {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              {% for value in grades.values %}
+                <td>{% if value is None %} --{% else %} {% widthratio value 1 100 %}% {% endif %}</td>
+              {% endfor %}
+            </tr>
+            </tbody>
+          </table>
+        {% else %}
+          <p>No grades available</p>
+        {% endif %}
       </div>
     </div>
   </div>

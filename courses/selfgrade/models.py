@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 from django_tex.core import compile_template_to_pdf
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Sum
+from django.core.exceptions import ValidationError
 import uuid
 
 from courses.users.models import User
@@ -143,7 +143,7 @@ class Registration(models.Model):
     def __str__(self):
         return f"{self.user} registered in {self.course}"
 
-    def get_percentage_grades(self):
+    def get_assignment_grades(self):
         """
         return a dictionary with the percent grade for each assignment for the course
         (keyed by name - make sure names are unique!)
@@ -171,6 +171,41 @@ class Registration(models.Model):
 
         return percentage_grades
 
+    def get_grades(self):
+        """
+        return a dictionary with the percent grade for each test as well as the homework
+        (keyed by name - make sure names are unique and dont' use 'Assignments' as a key!)
+        along with key 'Total' giving the final percentage grade for this course
+        """
+
+        tests = self.course.test_set.all()
+        gradedtests = self.gradedtest_set.filter(registration=self)
+        grades = {}
+        weights = {}
+        for test in tests:
+            gradedtest = gradedtests.filter(test=test).first() #guarnateed unique - returns None if 0
+            weights[test.name] = test.weight
+            if gradedtest and (gradedtest.points is not None):
+                test_grade = float(gradedtest.points)/float(test.max_points)
+            else:
+                test_grade = None  # lack of grade is treated as none (drop grade)
+            grades[test.name] = test_grade
+
+        total_test_weights = sum(weights.values())
+        homework_weight = 100-total_test_weights
+        weights['Assignments'] = homework_weight
+        homework_grade = self.get_assignment_grades()['Total']
+        grades['Assignments'] = homework_grade
+        if not any(key is None for key in grades.values()):
+            #as long as there are no 'None' entries, calculate final grade
+            grade = 0
+            for name in grades:
+                grade += float(grades[name] * weights[name])/float(100)
+            grades['Total'] = grade
+        else:
+            grades['Total'] = None
+
+        return grades
 
 class Assignment(models.Model):
     """
@@ -469,3 +504,40 @@ class GradedPart(models.Model):
     @property
     def points(self):
         return self.assigned_part.points
+
+class Test(models.Model):
+    """
+    Represents a test with a name and maximum points.
+    """
+    name = models.CharField(max_length=100, help_text="The name of the test.")
+    max_points = models.PositiveSmallIntegerField(help_text="The maximum points achievable on the test.")
+    weight = models.PositiveSmallIntegerField(help_text="The percentage of the total grade.")
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        help_text="The course this test belongs to.",
+    )
+
+    def __str__(self):
+        return self.name
+
+class GradedTest(models.Model):
+    """
+    Stores the points a student received on a specific test.
+    """
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, help_text="The student's registration.")
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, help_text="The test being graded.")
+    points = models.PositiveIntegerField(blank=True,null=True,help_text="The points the student received.")
+
+    class Meta:
+        """
+        Ensure each student has only one graded result per test.
+        """
+        unique_together = ("registration", "test")
+
+    def clean(self):
+        if self.points is not None and self.points > self.test.max_points:
+            raise ValidationError("Points cannot exceed the maximum points for the test.")
+
+    def __str__(self):
+        return f"{self.registration.user} - {self.test}: {self.points}/{self.test.max_points}"

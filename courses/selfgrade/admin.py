@@ -11,6 +11,8 @@ from .models import Problem
 from .models import Registration
 from .models import Submission
 from .models import Topic
+from .models import Test
+from .models import GradedTest
 
 from django.utils.html import format_html
 
@@ -38,24 +40,41 @@ class ProblemAdmin(admin.ModelAdmin):
     search_fields = ("name", "notes")
     actions = [compile_problem_tex_action]
 
-
 class RegistrationInline(admin.TabularInline):
     model = Registration
     extra = 1
 
+class TestInline(admin.TabularInline):
+    model = Test
+    extra = 1
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ("name", "description")
     search_fields = ("name", "description")
-    inlines = [RegistrationInline]
+    inlines = [RegistrationInline, TestInline]
 
+
+class GradedTestInline_forregistration(admin.TabularInline):
+    model = GradedTest
+    extra = 0
+    max_num = 0 # no new objects
+    can_delete = False
+    fields = ('test_name', 'points', 'max')
+    readonly_fields = ('test_name', 'max')
+    ordering = ('registration__user__name',)
+
+    def max(self, obj):
+        return obj.test.max_points
+
+    def test_name(self, obj):
+        return obj.test.name
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
     list_display = ("user", "course")
     list_filter = ("user", "course")
-
+    inlines = (GradedTestInline_forregistration,)
 
 class AssignedProblemInline(admin.TabularInline):
     model = AssignedProblem
@@ -143,3 +162,32 @@ class GradedPartAdmin(admin.ModelAdmin):
         "submission__assignment",
         "assigned_part__assigned_problem",
     )
+
+class GradedTestInline_fortest(admin.TabularInline):  # Or admin.StackedInline for a vertical layout
+    model = GradedTest
+    extra = 0
+    max_num = 0 # no new objects
+    can_delete = False
+    fields = ('student', 'points', 'max')
+    readonly_fields = ('student', 'max')
+    ordering = ('registration__user__name',)
+
+    def student(self, obj):
+        return obj.registration.user.name
+
+    student.short_description = 'Student' #title shown in admin
+
+    def max(self, obj):
+        return obj.test.max_points
+
+    def test_name(self, obj):
+        return obj.test.name
+
+@admin.register(Test)
+class TestAdmin(admin.ModelAdmin):
+    inlines = [GradedTestInline_fortest]
+
+@admin.register(GradedTest)
+class GradedTestAdmin(admin.ModelAdmin):
+    pass
+
