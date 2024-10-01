@@ -13,6 +13,7 @@ from .models import Submission
 from .models import Topic
 from .models import Test
 from .models import GradedTest
+from .models import Material
 
 from django.utils.html import format_html
 
@@ -69,6 +70,10 @@ class GradedTestInline_forregistration(admin.TabularInline):
 
     def test_name(self, obj):
         return obj.test.name
+
+@admin.register(Material)
+class MaterialAdmin(admin.ModelAdmin):
+    pass
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):

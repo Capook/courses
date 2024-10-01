@@ -120,6 +120,29 @@ class Course(models.Model):
     def __str__(self):
         return self.name
 
+class Material(models.Model):
+    """
+    Represents a file available to all registered users
+    """
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        help_text="The course the material is associated with.",
+    )
+    name = models.CharField(max_length=100, help_text="The name of the material.")
+    description = models.TextField(
+        blank=True,
+        help_text="A description of the material.",
+    )
+    file = models.FileField(
+        upload_to="materials/",
+        help_text="File containing the material.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 class Registration(models.Model):
     """

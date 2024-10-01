@@ -15,6 +15,7 @@ from .models import Assignment
 from .models import Course
 from .models import Registration
 from .models import Submission
+from .models import Material
 
 
 @login_required
@@ -43,6 +44,7 @@ def course_detail(request, course_id):
     #this could be just registration_detail... right?
     course = get_object_or_404(Course, id=course_id)
     assignments = Assignment.objects.filter(course=course).order_by('due_at').prefetch_related("assignedproblem_set")
+    materials = Material.objects.filter(course=course)
     registration = Registration.objects.filter(user=request.user, course=course).first()
     if not registration:
         return redirect('selfgrade:my_courses')
@@ -119,7 +121,8 @@ def course_detail(request, course_id):
         "percentage_grades": percentage_grades,
         "grades": grades,
         "assignment_grading_scheme": assignment_grading_scheme,
-        "grading_scheme": grading_scheme
+        "grading_scheme": grading_scheme,
+        "materials": materials
     }
     return render(request, "selfgrade/course_detail.html", context)
 
