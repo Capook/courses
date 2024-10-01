@@ -61,7 +61,7 @@ def course_detail(request, course_id):
 
     assignment_grading_scheme = 'Total is calculated as the average of homework percentages, dropping the two lowest scores.'
     percentage_grades = registration.get_assignment_grades() #assignment grades
-    grading_scheme = 'Total is calculated as the weighted average: Assignments 20%, quizzes each 5%, midterm is 25%, final 30%.  You are guaranteed to receive an A/B/C/D if your total is at least 85/70/60/50.'
+    grading_scheme = 'Total is calculated as the weighted average: Assignments 20%, quizzes each 5%, midterm 25%, final 30%.  You are guaranteed to receive an A/B/C/D if your total is at least 85/70/60/50.'
     grades = registration.get_grades()
 
     #this was Gemini's idea to have one generic form
