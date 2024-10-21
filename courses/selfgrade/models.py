@@ -76,6 +76,7 @@ class Problem(models.Model):
         Compile the statement tex and save to the statement_pdf field.
         Add uuid to filename since it might be in a public media directory.
         (The filename is then not revealed unless the app wants to.)
+        (This also avoids overwriting another file with the same name.)
         No latex error handling atm. I made some changes to the bare package django_tex core.py... careful
         """
         template_name = 'selfgrade/tex/problem_statement.tex'
@@ -186,9 +187,8 @@ class Registration(models.Model):
             percentage_grades[assignment.name] = percentage_grade
         numeric_percentage_grades = [float(value) for value in percentage_grades.values() if value is not None]
         numeric_percentage_grades_with_drop = sorted(numeric_percentage_grades)[2:] #drop lowest two
-        if numeric_percentage_grades_with_drop:
-            percentage_grades['Total'] = sum(numeric_percentage_grades_with_drop) / len(
-                numeric_percentage_grades_with_drop)
+        if numeric_percentage_grades_with_drop: #don't change key name from 'Total' - hard coded elsewhere
+            percentage_grades['Total'] = sum(numeric_percentage_grades_with_drop) / len(numeric_percentage_grades_with_drop)
         else:
             percentage_grades['Total'] = 1
 
@@ -197,7 +197,7 @@ class Registration(models.Model):
     def get_grades(self):
         """
         return a dictionary with the percent grade for each test as well as the homework
-        (keyed by name - make sure names are unique and dont' use 'Assignments' as a key!)
+        (keyed by name - make sure names are unique and don't use 'Assignments' as a key!)
         along with key 'Total' giving the final percentage grade for this course
         """
 

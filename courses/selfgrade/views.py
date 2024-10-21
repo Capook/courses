@@ -186,11 +186,11 @@ def grade_report(request, course_id):
     data = []
     if registrations:
         for registration in registrations:
-            row = [registration.user.email]
-            pg = registration.get_assignment_grades()
+            row = [registration.user.name, registration.user.email]
+            pg = registration.get_grades()
             row = row + list(pg.values())
             data.append(row)
-        headers = ['Email'] + list(pg.keys())
+        headers = ['Name', 'Email'] + list(pg.keys())
 
     context = {'headers': headers, 'data': data} #django template logic is limited... pass keys here
 
