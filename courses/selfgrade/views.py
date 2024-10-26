@@ -134,10 +134,17 @@ def single_course_view(request):
 
 @staff_member_required
 def next_review(request, assignment_id):
-    next_submission=Submission.objects.filter(assignment=assignment_id, reviewed_at__isnull=True).first()
+    #Show the next submission to review
+    next_submission=Submission.objects.filter(assignment=assignment_id, reviewed_at__isnull=True, graded_submission__isnull=False).first()
     if next_submission:
         return redirect('selfgrade:review', submission_id=next_submission.id)
     else:
+        #If there are no graded submissions to review, show us any who submitted the hw but not the grading
+        next_nonsubmission = Submission.objects.filter(assignment=assignment_id, reviewed_at__isnull=True).first()
+        if next_nonsubmission:
+            return redirect('selfgrade:review', submission_id=next_nonsubmission.id)
+
+        #We've reviewed all the submissions, so redirect elsewhere
         course = Assignment.objects.get(id=assignment_id).course
         return redirect('selfgrade:review_list', course_id=course.id)
 
