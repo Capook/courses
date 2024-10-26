@@ -429,7 +429,7 @@ class Submission(models.Model):
     )
     reviewed_submission = models.FileField(
         upload_to="reviewed_submissions/",
-        null=True,
+        null=True, #Not sure file fields should allow null.  I think they are just char fields.
         blank=True,
         help_text="PDF file of the reviewed submission.",
     )

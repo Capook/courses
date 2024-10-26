@@ -135,7 +135,7 @@ def single_course_view(request):
 @staff_member_required
 def next_review(request, assignment_id):
     #Show the next submission to review
-    next_submission=Submission.objects.filter(assignment=assignment_id, reviewed_at__isnull=True, graded_submission__isnull=False).first()
+    next_submission=Submission.objects.filter(assignment=assignment_id, reviewed_at__isnull=True, graded_submission__ne='').first()
     if next_submission:
         return redirect('selfgrade:review', submission_id=next_submission.id)
     else:
