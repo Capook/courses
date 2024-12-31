@@ -1,0 +1,159 @@
+{% load crispy_forms_tags %}
+{% load crispy_forms_utils %}
+{% load crispy_forms_field %}
+
+{% specialspaceless %}
+  {% if formset_tag %}
+
+    {# needs a formset like normal, but also an assignment.id to generate unique dom id's #}
+    {# Things aren't properly scoped here - cest la vie #}
+
+    <form {{ flat_attrs }} method="{{ form_method }}" {% if formset.is_multipart %}
+                           enctype="multipart/form-data"{% endif %}>
+  {% endif %}
+{% if formset_method|lower == 'post' and not disable_csrf %}
+  {% csrf_token %}
+{% endif %}
+
+<div>
+  {{ formset.management_form|crispy }}
+</div>
+<script> 
+  {# This ends up getting defined multiple times but that's ok #}
+function showgroup(assignment_id, group_number) {
+  document.getElementById(assignment_id + 'extragroup' + group_number).style.display = 'table-row-group';
+  console.log((assignment_id + 'extragroup' + group_number))
+}
+</script>
+<table{% if form_id %} id="{{ form_id }}_table"{% endif %}>
+  <thead>
+  {% if formset.readonly and not formset.queryset.exists %}
+  {% else %}
+    <tr>
+      {% for field in formset.forms.0 %}
+        {% if field.label and not field.is_hidden %}
+          <th for="{{ field.auto_id }}" class="{% if field.field.required %}requiredField{% endif %}">
+            {{ field.label }}{% if field.field.required and not field|is_checkbox %}
+              <span class="asteriskField">*</span>{% endif %}
+          </th>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  {% endif %}
+  </thead>
+
+  <tbody>
+  <tr class="d-none empty-form">
+    {% for field in formset.empty_form %}
+      {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+    {% endfor %}
+  </tr>
+  {#  if there are errors, just show everything since it's too annoying to find out which group it's in #}
+  {% if assignment.formset.errors %}
+    <tbody>
+    {% for form in formset %}
+      {% if form_show_errors and not form.is_extra %}
+        {% include "bootstrap5/errors.html" %}
+      {% endif %}
+      <tr>
+        {% for field in form %}
+          {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  {% else %}
+    {# otherwise, render in groups with show more options #}
+
+    {# slice :-n is all but the last n - we expect 21 extra, show 1 extra to start, and offer to show more in groups of 5 #}
+    {# lots of copy/paste here #}
+    {% for form in formset|slice:":-20" %}
+      {% if form_show_errors and not form.is_extra %}
+        {% include "bootstrap5/errors.html" %}
+      {% endif %}
+      <tr>
+        {% for field in form %}
+          {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    <tr>
+      <td>
+        <a class="link-info" style="font-size:80%" href="#"
+           onclick="showgroup({{ assignment.id }}, 1); this.style.display='none';">(add more rows)</a>
+      </td>
+    </tr>
+    </tbody>
+    <tbody style="display: none" id="{{ assignment.id }}extragroup1">
+    {% for form in formset|slice:"-20:-15" %}
+      {% if form_show_errors and not form.is_extra %}
+        {% include "bootstrap5/errors.html" %}
+      {% endif %}
+      <tr>
+        {% for field in form %}
+          {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    <tr>
+      <td>
+        <a class="link-info" style="font-size:80%" href="#"
+           onclick="showgroup({{ assignment.id }}, 2); this.style.display='none';">(add more rows)</a>
+      </td>
+    </tr>
+    </tbody>
+    <tbody style="display: none" id="{{ assignment.id }}extragroup2">
+    {% for form in formset|slice:"-15:-10" %}
+      {% if form_show_errors and not form.is_extra %}
+        {% include "bootstrap5/errors.html" %}
+      {% endif %}
+      <tr>
+        {% for field in form %}
+          {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    <tr>
+      <td>
+        <a class="link-info" style="font-size:80%" href="#"
+           onclick="showgroup({{ assignment.id }}, 3); this.style.display='none';">(add more rows)</a>
+      </td>
+    </tr>
+    </tbody>
+    <tbody style="display: none" id="{{ assignment.id }}extragroup3">
+    {% for form in formset|slice:"-10:-5" %}
+      {% if form_show_errors and not form.is_extra %}
+        {% include "bootstrap5/errors.html" %}
+      {% endif %}
+      <tr>
+        {% for field in form %}
+          {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    <tr>
+      <td>
+        <a class="link-info" style="font-size:80%" href="#"
+           onclick="showgroup({{ assignment.id }}, 4); this.style.display='none';">(add more rows)</a>
+      </td>
+    </tr>
+    </tbody>
+    <tbody style="display: none" id="{{ assignment.id }}extragroup4">
+    {% for form in formset|slice:"-5:" %}
+      {% if form_show_errors and not form.is_extra %}
+        {% include "bootstrap5/errors.html" %}
+      {% endif %}
+      <tr>
+        {% for field in form %}
+          {% include 'bootstrap5/field.html' with tag="td" form_show_labels=False %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  {% endif %}
+</table>
+
+{% include "bootstrap5/inputs.html" %}
+
+{% if formset_tag %}</form>{% endif %}
+{% endspecialspaceless %}

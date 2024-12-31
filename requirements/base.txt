@@ -16,6 +16,9 @@ django-redis==5.4.0  # https://github.com/jazzband/django-redis
 
 # Other
 django-tex==1.1.10
+django-template-partials==24.4
+django-widget-tweaks==1.5.0
+django-ordered-model==3.8.0a0
 
 #moved from local (we don't need this in production, but somehow its static files are important)
 django-debug-toolbar==4.4.6  # https://github.com/jazzband/django-debug-toolbar

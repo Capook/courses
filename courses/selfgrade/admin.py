@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from ordered_model.admin import OrderedModelAdmin, OrderedTabularInline, OrderedInlineModelAdminMixin
 
 from .models import AssignedProblem
 from .models import AssignedPart
 from .models import Assignment
 from .models import Course
 from .models import GradedPart
+from .models import Part
 from .models import Problem
 from .models import Registration
 from .models import Submission
@@ -14,6 +16,9 @@ from .models import Topic
 from .models import Test
 from .models import GradedTest
 from .models import Material
+from .models import Schema
+from .models import SchemaItem
+from .models import Part
 
 from django.utils.html import format_html
 
@@ -49,11 +54,19 @@ class TestInline(admin.TabularInline):
     model = Test
     extra = 1
 
+class MaterialInline(OrderedTabularInline):
+    model = Material
+    extra = 1
+    fields = ('name','order',) #move_up_down_links doesn't seem to work
+    readonly_fields = ('order',)
+    ordering=('order',)
+
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
+    model=Course
     list_display = ("name", "description")
     search_fields = ("name", "description")
-    inlines = [RegistrationInline, TestInline]
+    inlines = [RegistrationInline, TestInline, MaterialInline]
 
 
 class GradedTestInline_forregistration(admin.TabularInline):
@@ -72,8 +85,8 @@ class GradedTestInline_forregistration(admin.TabularInline):
         return obj.test.name
 
 @admin.register(Material)
-class MaterialAdmin(admin.ModelAdmin):
-    pass
+class MaterialAdmin(OrderedModelAdmin):
+    list_display = ('name', 'course','move_up_down_links')
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
@@ -83,6 +96,10 @@ class RegistrationAdmin(admin.ModelAdmin):
 
 class AssignedProblemInline(admin.TabularInline):
     model = AssignedProblem
+    extra = 1
+
+class PartInline(OrderedTabularInline):
+    model = Part
     extra = 1
 
 @admin.action(description='Compile tex')
@@ -99,7 +116,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     list_display = ("name", "course", "due_at")
     list_filter = ("course",)
     search_fields = ("name",)
-    inlines = [AssignedProblemInline]
+    inlines = [AssignedProblemInline,PartInline]
     actions = [compile_assignment_tex_action]
 
 
@@ -196,3 +213,18 @@ class TestAdmin(admin.ModelAdmin):
 class GradedTestAdmin(admin.ModelAdmin):
     pass
 
+class SchemaItemInline(admin.TabularInline):
+    model = SchemaItem
+    extra = 1
+
+@admin.register(Schema)
+class AssignedProblemAdmin(admin.ModelAdmin):
+    inlines = [SchemaItemInline]
+
+class SchemaItemInline(admin.TabularInline):
+    model = SchemaItem
+    extra = 1
+
+@admin.register(Part)
+class AssignedProblemAdmin(admin.ModelAdmin):
+    pass

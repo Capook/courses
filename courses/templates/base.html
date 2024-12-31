@@ -6,7 +6,7 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge"/>
   <title>
     {% block title %}
-      OYGo
+      Gradebird
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -14,29 +14,21 @@
         content="Web app for courses with self-grading"/>
   <meta name="author"
         content="Sam Gralla"/>
-  <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}"/>
+  <link rel="icon" href="{% static 'images/favicons/bird_w_trans.png' %}"/>
   {% block css %}
-    <!-- Latest compiled and minified Bootstrap CSS -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
-          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer"/>
-    <!-- Your stuff: Third-party CSS libraries go here -->
-    <!-- This file stores project-specific CSS -->
-
-
-    <link href="{% static 'css/project.css' %}" rel="stylesheet"/>
-
-
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project.css' %}" rel="stylesheet"/>
   {% endblock css %}
   <!-- Le javascript
       ================================================== -->
   {# Placed at the top of the document so pages load faster with defer #}
   {% block javascript %}
 
+    {# popper comes first #}
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 
-    <!-- Bootstrap JS -->
+    {# then bootstrap #}
     <script defer
             src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
             integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
@@ -49,11 +41,18 @@
 
 
     <script defer src="{% static 'js/project.js' %}"></script>
-
+    <script src="https://unpkg.com/htmx.org@2.0.3"
+            integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+            crossorigin="anonymous"></script>
+    <!-- Alpine Plugins come before alpin core -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/sort@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   {% endblock javascript %}
+  {% block extra_head %}{% endblock extra_head %}
 </head>
-<body class="{% block bodyclass %}{% endblock bodyclass %}">
+
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="{% block bodyclass %}{% endblock bodyclass %}">
 {% block body %}
   <div class="mb-1">
     <nav class="navbar navbar-expand-md navbar-light bg-light">
@@ -68,27 +67,39 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         {% if request.user.is_authenticated and request.user.registration_set.count == 1 %}
-          {% with course=request.user.registration_set.first.course %}
-            <a class="navbar-brand" href="{% url 'home' %}">{{ course.shortname }}</a>
+          {% with registration=request.user.registration_set.first %} {# no spaces surroundin = allowed! #}
+            <a class="navbar-brand fs-6" href="{% url 'home' %}"><img src="{% static 'images/bird.png' %}"
+                                                                      style="height:30px"></a>
+            <a class="navbar-brand" href="{% url 'home' %}">{{ registration.course.shortname }}</a>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <ul class="navbar-nav mr-auto">
+                {% if registration.type == registration.INSTRUCTOR %}
                   <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
+                    <a class="nav-link"
+                       href="{% url 'selfgrade:course' registration.course.id %}">{% translate "Course" %}</a>
                   </li>
+                  <li class="nav-item">
+                    <a class="nav-link"
+                       href="{% url 'selfgrade:grading' registration.course.id %}">{% translate "Grading" %}</a>
+                  </li>
+                {% endif %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
+                </li>
               </ul>
             </div>
           {% endwith %}
         {% else %}
-          <a class="navbar-brand" href="{% url 'home' %}">OYGo</a>
+          <a class="navbar-brand fs-6" href="{% url 'home' %}"><img src="{% static 'images/bird.png' %}"
+                                                                    style="height:30px"></a>
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
               <li class="nav-item active">
-                <a class="nav-link" href="{% url 'home' %}">Home <span class="visually-hidden">(current)</span></a>
+                <a class="nav-link" href="{% url 'home' %}">Gradebird <span class="visually-hidden">(current)</span></a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'about' %}">About</a>
-              </li>
+              {#              <li class="nav-item">#}
+              {#                <a class="nav-link" href="{% url 'about' %}">About</a>#}
+              {#              </li>#}
               {% if request.user.is_authenticated %}
                 <li class="nav-item">
                   <a class="nav-link"
@@ -110,19 +121,20 @@
                 {% endif %}
                 {% if debug %}
                   {# same garbage hack to find out if we're local or production #}
-                <li class="nav-item">
-                  {# URL provided by django-allauth/account/urls.py #}
-                  <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
-                </li>
-                  {% else %}
                   <li class="nav-item">
-                  {# URL provided by django-allauth/account/urls.py #}
+                    {# URL provided by django-allauth/account/urls.py #}
+                    <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
+                  </li>
+                {% else %}
+                  <li class="nav-item">
+                    {# URL provided by django-allauth/account/urls.py #}
                     {# if production, hack to get straight to overloaded login template #}
-                  <a id="log-in-link" class="nav-link" href="https://courses.samgralla.me/accounts/google/login/?process=login">
-                    {% translate "Sign In" %}</a>
-                </li>
+                    <a id="log-in-link" class="nav-link"
+                       href="https://www.gradebird.com/accounts/google/login/?process=login">
+                      {% translate "Sign In" %}</a>
+                  </li>
 
-                  {% endif %}
+                {% endif %}
               {% endif %}
             </ul>
           </div>

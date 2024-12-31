@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% load custom_filters %}
+{% load crispy_forms_tags %}
+{% load tz %}
+{% load partials %}
+{% load static %}
+{% load widget_tweaks %}
+
+{#CRAZY BUG: If x-show is not working upon htmx refresh, try removing id from divs! #}
+{#  Also I'm finding that certain bootstrap classes interfere with alpine #}
+{# Best to have every alpine div just have x- attributes #}
+{# I've been ignoring this for a whiel and it's fine #}
+
+{% block extra_head %}
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css">
+  <style>
+    .tooltip {
+      --bs-tooltip-opacity: 1;
+    }
+
+    .tooltip-inner {
+      max-width: 800px;
+      background-color: var(--bs-light);
+      color: black;
+      border: 1px solid black;
+      text-align: left;
+    }
+
+    .tooltip .tooltip-arrow {
+      border-bottom-color: var(--bs-light) !important;
+    }
+  </style>
+  <style>
+    [x-cloak] {
+      display: none
+    }
+  </style>
+  <style>
+    .cursor-pointer {
+      cursor: pointer;
+    }
+
+    .my-indicator {
+      display: none;
+    }
+
+    .htmx-request .my-indicator {
+      display: inline-block;
+    }
+
+    .htmx-request.my-indicator {
+      display: inline-block;
+    }
+
+    .nav-tabs {
+
+    }
+
+    .nav-tabs {
+      border-bottom: 0;
+      border-top: 1px solid #ddd;
+    {# font-size: 18pt  #} {# need to make this different for different scren sizes!! #}
+    }
+
+    .nav-tabs .nav-link {
+      border: none;
+      /* color: rgba(0, 0, 0, .75);*/
+    }
+
+    .nav-tabs .nav-link.active {
+      border-bottom: 3px solid; /* var(--bs-info) */
+      font-weight: bold;
+    }
+  </style>
+
+{% endblock %}
+
+{################################################### MAIN CONTENT ####################################################}
+
+{% block title %}
+  {{ course.name }} - grading
+{% endblock title %}
+{% block content %}
+
+  <div class="container mt-4">
+    {% if not course.assignments_only %}
+      This page is implemented only for assignments only courses
+    {% else %}
+      <h2 class="mb-3"> {{ course.shortname }} Grading</h2>
+      {% if submissions %}
+        <h2>Submissions to review</h2>
+        <ul>
+          {% for submission in submissions %}
+            <li>
+              <a class="link-info" target="_blank" 
+                 href="{% url 'selfgrade:review' submission_id=submission.id %}">
+                {{ submission.assignment.name }} from {{ submission.registration.user }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No submissions to review.</p>
+      {% endif %}
+      <h2>Grades</h2>
+      <a class="link-info" href="#" hx-get="{% url 'selfgrade:assignment_grade_table' course.id %}" hx-swap="outerHTML">
+        Get assignment grades
+        <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+      </a>
+    {% endif %}
+  </div>
+
+{% endblock content %}
+
+{% block inline_javascript %}
+  {# initialize all tooltips #}
+  <script>
+    function initializeAssignmentTable() {
+      //All columns except first two are percentages or "None"
+      var numCols = document.getElementById('data').rows[0].cells.length;
+      var targetCols = [];
+      for (var i = 2; i < numCols; i++) {
+        targetCols.push(i);
+      }
+      $('#data').DataTable({
+        columnDefs: [{
+          targets: targetCols,
+          render: function (data, type, row) {
+            if (data == 'None') {
+              return '--';
+            } else {
+              return (parseFloat(data) * 100).toFixed(1) + '%';
+            }
+          }
+        }]
+      });
+    }
+
+    htmx.onLoad(initializeAssignmentTable)
+  </script>
+{% endblock inline_javascript %}

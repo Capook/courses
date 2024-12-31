@@ -2,6 +2,14 @@
 
 {% load crispy_forms_tags %}
 {% load tz %}
+{% load partials %}
+
+{#  duplicated in course.html - fix #}
+{% partialdef schema_description %}
+  {% for item in schema.items.all %}
+    <b>{{ item.name }} ({{ item.points }} points)</b> - {{ item.description }}<br>
+  {% endfor %}
+{% endpartialdef schema_description %}
 
 {% block title %}
   Review submission
@@ -16,7 +24,7 @@
         <div class="card mb-2" style="background: #FAFAFA">
           <div class="card-header"><h5 class="card-title">Submission</h5></div>
           <div class="card-body">
-            <table class="table">
+            <table class="table clear-table">
               <tbody>
               <tr>
                 <th scope="row">Course</th>
@@ -91,33 +99,45 @@
         <div class="card mb-2">
           <div class="card-header"><h5>PDF preview - graded submission</h5></div>
           <div class="card-body">
-          <div id="adobe-dc-view" style="width:100%; aspect-ratio: 8.5/11"></div>{# the height and width tell teh adobe sized container what to do #}
-            </div>
+            <div id="adobe-dc-view" style="width:100%; aspect-ratio: 8.5/11"></div>
+            {# the height and width tell teh adobe sized container what to do #}
+          </div>
         </div>
         {# REVIEW FORM #}
         <div class="card" style="background: aliceblue">
-          <div class="card-header"><h5 class="card-title">Review</h5></div>
+          <div class="card-header">
+            <h5 class="card-title">Review</h5>
+          </div>
           <div class="card-body">
             <form method="post" enctype="multipart/form-data">
               {% csrf_token %}
               {{ review_formset.management_form }}
               {% if review.formset.errors %}{{ review_formset.errors }}{% endif %}
-              <table class="table">
+              <table class="table clear-table">
                 <thead>
                 <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Points</th>
-                  <th scope="col">Self grade</th>
-                  <th scope="col">Final Grade</th>
+                  <th scope="col"></th>
+                  <th scope="col">Rubric</th>
+                  <th scope="col">Self assessment</th>
+                  <th scope="col">Grade</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for form in review_formset %}
                   <div class="form-group">
                     <tr>
-                      <th scope="row">{{ form.instance.get_label_smart }}</th>
-                      <td>{{ form.instance.points }}</td>
-                      <td>{% if form.instance.self_grade %}{{ form.instance.self_grade }}{% else %} -- {% endif %}</td>
+                      <th scope="row">{{ form.instance.name }}</th>
+                      <td>
+                        <a type="button" class="link-info" data-bs-toggle="tooltip" data-bs-placement="top"
+                           data-bs-html="true"
+                           title="{% with schema=form.instance.part.schema %} {% partial schema_description %} {% endwith %}">
+                          {{ form.instance.part.schema.name }}
+                        </a>
+                        {% if form.instance.part.rubric %}
+                          <p class="mb-0" style="font-size:80%">{{ form.instance.part.rubric }}</p>
+                        {% endif %}
+                      </td>
+                      <td>{% if form.instance.self_grade %}{{ form.instance.self_grade_name }} ({{ form.instance.self_grade }}){% else %} -- {% endif %}</td>
                       <td>{% crispy form form.helper %}</td>
                       {# don't render individual fields because hidden fields used by formset might be missing #}
                     </tr>
@@ -128,7 +148,7 @@
               <div class="form-group">
                 {{ reviewer_comments_form|crispy }}
               </div>
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-secondary">
                 {% if submission.reviewed_at %}
                   Update review
                 {% else %}
@@ -138,27 +158,31 @@
             </form>
           </div>
         </div>
-
       </div>
     </div>
   </div>
+
+{% endblock content %}
+
+{% block inline_javascript %}
   {% if submission.graded_submission %}
- <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
- <script type="text/javascript">
-    document.addEventListener("adobe_dc_view_sdk.ready", function()
-    {
-        var adobeDCView = new AdobeDC.View({clientId: "{{ adobe_api_key }}", divId: "adobe-dc-view"});
+    <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
+    <script type="text/javascript">
+      document.addEventListener("adobe_dc_view_sdk.ready", function () {
+        var adobeDCView = new AdobeDC.View({clientId: "{{ adobe_api_key }", divId: "adobe-dc-view"});
         adobeDCView.previewFile(
-       {
-          content:   {location: {url: "{{ submission.graded_submission.url|safe }}"} }, {# safe to prevent &amp - might not be necessary though #}
-          metaData: {fileName: "graded_submission.pdf"},
-       },
-          {embedMode: "FULL_WINDOW", showAnnotationTools: true}); {# sized container mode doesn't show annotations #}
-    });
- </script>
+          {
+            content: {location: {url: "{{ submission.graded_submission.url|safe }}"}}, {# safe to prevent &amp - might not be necessary though #}
+            metaData: {fileName: "graded_submission.pdf"},
+          },
+          {embedMode: "FULL_WINDOW", showAnnotationTools: true});
+        {# sized container mode doesn't show annotations #}
+      });
+    </script>
   {% endif %}
 
   {# remove the mb-3 rendered by crispy in the outer div.  can't find a way to do it within crispy #}
+  {# Actually I found a way using helper - used for forms in grading.html.  leaving this for now #}
   <script>
     const elements = document.querySelectorAll('[id^="div_id_gradedpart_set-"][id$="-grade"]');
 
@@ -166,4 +190,15 @@
       element.classList.remove('mb-3');
     });
   </script>
-{% endblock content %}
+  {# initialize all tooltips #}
+  <script>
+    function loadAllTooltips() {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    }
+
+    htmx.onLoad(loadAllTooltips)
+  </script>
+{% endblock inline_javascript %}

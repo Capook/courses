@@ -1,17 +1,38 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}
-  OYGo
+  Gradebird - alight to learn
 {% endblock title %}
 {% block content %}
   {% if request.user.is_authenticated %}
     {% if request.user.registration_set.exists %}
       Head to <a href="{% url 'selfgrade:my_courses' %}">courses</a>.
     {% else %}
-      This is the course page for PHYS 511, Fall 2024 (taught by Sam Gralla).  You have signed up with email {{ request.user.email }}.  If this is your official university email address and you are enrolled in the course, I will approve the registration.  Then you will be able to see course content and submit assignments.
+      You have signed up with email {{ request.user.email }}.  If this is your official university email address and you are enrolled in the course, your registration will be approved.  Then you will be able to see course content and submit assignments.
       {% endif %}
   {% else %}
-This is the course page for PHYS 511, Fall 2024 (taught by Sam Gralla).  If you are a student in the class, please sign up using your university email address.
-  After I manually approve, you will see the course content.  If you have already signed up and been approved, just log in.
+    <div class="container"><div class="row"><div class="col-md-9">
+    <h3 class="mt-3">Welcome to Gradebird!</h3>
+    <p style="" class="fst-italic">Gradebird - alight to learn</p>
+    <p>
+      Gradebird is a learning management system designed for the <b>alight workflow</b>.  After submitting their homework, the students:
+      <ul>
+        <li><strong>Assess</strong> their own work according to a rubric</li>
+        <li><strong>Learn</strong> from any mistakes</li>
+        <li><strong>Tune</strong> their skills for the next assignment</li>
+      </ul>
+    <p>
+    </div>
+    <div class="col-md-3 d-flex justify-content-md-end justify-content-center align-content-end">
+          <img src="{% static 'images/bird.png' %}" class="image-fluid border border-1 border-black mt-md-5 mb-3" style="width:180px; height:160px;">
+    </div></div></div>
+    <p>Gradebird makes it easy.  Each homework assignment has two steps with two separate deadlines: submission and self-assessment.
+    The solutions and rubric appear after the submission deadline.  The students assess their work and upload an annotated copy supporting their scores.
+    The instructor views and approves (or rejects) the assessments, leaving optional comments. </p>
+    <p>The alight workflow has been used in the Department of Physics at the University of Arizona since 2021, developed initially by Professor of Practice Drew Milson and later adopted by Professor Sam Gralla.
+    Finding traditional learning management systems too clunky for this approach, Prof. Gralla designed Gradebird in 2024.  Gradebird is free for now, although a small fee may be instituted in the future.
+      If you would like to use Gradebird in your course, please fill out  <a class="text-info" href="{% url 'signup' %}">this form</a>.
+    </p>
   {% endif %}
 {% endblock content %}

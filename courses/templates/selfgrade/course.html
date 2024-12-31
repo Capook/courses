@@ -1,0 +1,885 @@
+{% extends "base.html" %}
+
+{% load custom_filters %}
+{% load crispy_forms_tags %}
+{% load tz %}
+{% load partials %}
+{% load static %}
+{% load widget_tweaks %}
+
+{#CRAZY BUG: If x-show is not working upon htmx refresh, try removing id from divs! #}
+{#  Also I'm finding that certain bootstrap classes interfere with alpine #}
+{# Best to have every alpine div just have x- attributes #}
+{# I've been ignoring this for a whiel and it's fine #}
+
+{% block extra_head %}
+  <style>
+    [x-cloak] {
+      display: none
+    }
+  </style>
+  <style>
+    .cursor-pointer {
+      cursor: pointer;
+    }
+
+    .my-indicator {
+      display: none;
+    }
+
+    .htmx-request .my-indicator {
+      display: inline-block;
+    }
+
+    .htmx-request.my-indicator {
+      display: inline-block;
+    }
+
+    .nav-tabs {
+
+    }
+
+    .nav-tabs {
+      border-bottom: 0;
+      border-top: 1px solid #ddd;
+    {# font-size: 18pt  #} {# need to make this different for different scren sizes!! #}
+    }
+
+    .nav-tabs .nav-link {
+      border: none;
+      /* color: rgba(0, 0, 0, .75);*/
+    }
+
+    .nav-tabs .nav-link.active {
+      border-bottom: 3px solid; /* var(--bs-info) */
+      font-weight: bold;
+    }
+  </style>
+
+{% endblock %}
+
+{########################################### NAME #####################################################}
+
+{% partialdef name %}
+  <div id="name" x-data="{editing: {% if course_name_update_form.errors %} true {% else %} false {% endif %} }">
+    <div x-show="!editing">
+      <h2 class="mb-3">
+        {{ course.name }}
+        {% if instructor %}<a x-show="!student" @click="editing = true" href="#" class="small">edit</a> {% endif %}
+      </h2>
+    </div>
+    <div x-cloak x-show="editing">
+      <form x-show="editing" class="form-inline" hx-target="#name"
+            hx-post="{% url 'selfgrade:update_course_name' course.id %}"
+            hx-swap="outerHTML">
+        <div class="input-group">
+          {% render_field course_name_update_form.name style="width:300px" class="form-control" %}
+          <div class="input-group-append">
+            <div class="d-flex">
+              <button type="submit" class="btn btn-secondary ms-2">
+                <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+                Update
+              </button>
+              {# without type=button it will submit! #}
+              <button type="button" @click="editing = false" class="btn btn-outline-info ms-2">Cancel
+                {# gray out cancel during request? #}
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endpartialdef %}
+
+{########################################### DESCRIPTION #####################################################}
+
+{% partialdef description %}
+  <div id="description" style="max-width: 800px"
+       x-data="{editing: {% if course_description_update_form.errors %} true {% else %} false {% endif %} }">
+    <div x-show="!editing"> {# keep the pre on one line... #}
+      <pre style="font-family: inherit; white-space:pre-wrap;">{{ course.description }} {% if instructor %}<a @click="editing = true" x-show="!student" href="#">edit</a>{% endif %}</pre>
+    </div>
+    <div x-cloak x-show="editing">
+      <form hx-target="#description"
+            hx-post="{% url 'selfgrade:update_course_description' course.id %}"
+            hx-swap="outerHTML"
+            class="mt-2 mb-4">
+        {% render_field course_description_update_form.description class="form-control" %}
+        <button type="submit" class="btn btn-secondary ms-2">Update</button>
+        {# without type=button it will submit! #}
+        <button type="button" @click="editing = false" class="btn btn-outline-info ms-2">Cancel</button>
+        <div class="spinner-border htmx-indicator" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endpartialdef %}
+
+{############################################### MATERIALS  #####################################################}
+
+{% partialdef material %}
+  {# alpine v3 is supposed to deal properly with nested variables, but giving unique name to be safe #}
+  {# also x-sort seems to need to be the outermost div for sorting to work properly.  otherwise on rearrage, 'undefined' is passed as the item #}
+  <div id="material{{ material.id }}" x-sort:item="{{ material.id }}">{# id is to replace entire element if we update #}
+    <div x-show="student" class="p-2"><h5><a class="text-info fw-bold" href="{{ material.file.url }}"
+                                             target="_blank">{{ material.name }}</a></h5>
+      <pre class="m-0" style="font-family: inherit; white-space:pre-wrap;">{{ material.description }}</pre>
+    </div>
+    {% if instructor %}
+      <div x-show="!student"
+           x-data="{editing{{ material.id }}: {% if material.form.errors %} true {% else %} false {% endif %}}">
+        <div x-show="!editing{{ material.id }}" x-sort:handle>
+          {# make this div the handle so that the edit form isn't draggable #}
+          <div class="cursor-pointer d-flex justify-content-between m-1 p-2 border border-info rounded-2 bg-light"
+               style="max-width:24rem">
+            <div>
+              <a class="fw-bold text-black" href="{{ material.file.url }}" target="_blank">{{ material.name }}</a>
+            </div>
+            <div>
+              <a style="font-size: 80%" @click="editing{{ material.id }} = true" href="#"> edit</a>
+              <button type="button" class="btn-close" aria-label="Delete"
+                      hx-confirm="Are you sure you wish to delete material '{{ material.name }}'?  The file will be permanently deleted."
+                      hx-post="{% url 'selfgrade:delete_material' material.pk %}"
+                      hx-target="#material{{ material.id }}"
+                      hx-swap="outerHTML"></button>
+            </div>
+          </div>
+        </div>
+        <div x-show="editing{{ material.id }}">
+          <div class="card m-1 rounded-2 border-info border-2 mt-3" style="max-width: 36rem">
+            <div class="card-header bg-secondary fw-bold text-info d-flex justify-content-between">
+              <div>
+                <button type="button" class="btn-close" style="visibility:hidden"></button>
+              </div>
+              {# for centering #}
+              <div>Edit material</div>
+              <button type="button" class="btn-close" @click="editing{{ material.id }}=false"></button>
+            </div>
+            <div class="card-body rounded-2 bg-light text-info">
+              <form hx-post="{% url 'selfgrade:update_material' material.id %}"
+                    hx-target="#material{{ material.id }}"
+                    hx-swap="outerHTML"
+                    hx-encoding="multipart/form-data">
+                {{ material.form|crispy }}
+                <button type="submit" class="btn btn-secondary">
+                  Update material
+                  <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+                </button>
+                <button type="button" @click="editing{{ material.id }} = false" class="btn btn-outline-info">Cancel
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endpartialdef material %}
+
+{% partialdef materials %}
+  <div id="materials-content">
+    <script>
+      function reorder_materials(item, position) {
+        {#console.log(item, position);#}
+        document.getElementById('reorder-material-item').value = item; //should be id of material that was just moved
+        document.getElementById('reorder-material-position').value = position; //new position in list starting with 0
+        document.getElementById('reorder-materials-form').dispatchEvent(new Event('submit')); //trigger htmx submission
+      }
+    </script>
+    <form id="reorder-materials-form" hx-post="{% url 'selfgrade:reorder_materials' course.id %}"
+          hx-target="#materials-content"
+          hx-swap="outerHTML" hx-indicator="#materials-spinner">
+      <input id="reorder-material-item" type="hidden" name="item" value="">
+      <input id="reorder-material-position" type="hidden" name="position" value="">
+    </form>
+    <div x-cloak x-data="{}" x-sort="reorder_materials($item,$position)">
+      {% for material in materials %}
+        {% partial material %}
+      {% endfor %}
+    </div>
+    {% if instructor %}
+      <div x-show="!student">
+        <div x-cloak x-data="{editing: {% if create_material_form.errors %} true {% else %} false {% endif %} }">
+          <a @click="editing = true" x-show="!editing" href="#">Upload new material</a>
+          <span id="materials-spinner" class="spinner-border spinner-border-sm htmx-indicator my-indicator"
+                role="status">
+          {# plan is to use this to show server calls for reordering materials #}
+        </span>
+          <div class="card m-1 rounded-2 border-info border-2 mt-3" style="max-width: 36rem"
+               x-show="editing">
+            <div class="card-header bg-secondary fw-bold text-info d-flex justify-content-between">
+              <div>
+                <button type="button" class="btn-close" style="visibility:hidden"></button>
+              </div>
+              {# for centering #}
+              <div>Add new material</div>
+              <button type="button" class="btn-close" @click="editing=false"></button>
+            </div>
+            <div class="card-body rounded-2 bg-light text-info">
+              <form hx-post="{% url 'selfgrade:create_material' %}" hx-target="#materials-content" hx-swap="outerHTML"
+                    hx-encoding="multipart/form-data">
+                {{ create_material_form|crispy }}
+                <button type="submit" class="btn btn-secondary">
+                  Create material
+                  <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+                </button>
+                <button type="button" @click="editing = false" class="btn btn-outline-info">Cancel
+                  {# gray out cancel during request? #}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endpartialdef materials %}
+
+{############################################### ASSIGNMENTS  #####################################################}
+
+{% partialdef assignment %}
+  {# alpine v3 is supposed to deal properly with nested variables, but giving unique name to be safe #}
+  {# also x-sort seems to need to be the outermost div for sorting to work properly.  otherwise on rearrage, 'undefined' is passed as the item #}
+  <div id="assignment{{ assignment.id }}" x-sort:item="{{ assignment.id }}">
+
+    {# student #}
+    <div x-show="student" class="accordion-item">
+      <h2 class="accordion-header" id="heading{{ assignment.id }}">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse{{ assignment.id }}" aria-expanded="false"
+                aria-controls="collapse{{ assignment.id }}">
+          <div class="d-flex justify-content-between w-100">
+            <span class="fw-bold">{{ assignment.name }}</span>
+            <span class="me-3 text-muted"> due {{ assignment.due_at|date:"n/j g:i a" }}</span>
+          </div>
+        </button>
+      </h2>
+      <div id="collapse{{ assignment.id }}" class="accordion-collapse collapse"
+           aria-labelledby="heading{{ assignment.id }}" data-bs-parent="#assignments-content">
+        {# remove data-bs-parent to allow multiple leaves to be open at once #}
+        <div class="accordion-body">
+          {# PROBLEMS #}
+          <div class="card bg-light">
+            <div class="card-header">
+              <h5>Problems</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-flex justify-content-evenly">
+                {% if assignment.statement_pdf %}
+                  <a href="{{ assignment.statement_pdf.url }}" target="_blank" class="link-info fw-bold">View
+                    assignment</a>
+                {% else %}
+                  <div>Assignment not available</div>
+                {% endif %}
+                {% if assignment.is_after_deadline %}
+                  {% if assignment.solution_pdf %}
+                    <a href="{{ assignment.solution_pdf.url }}" target="_blank" class="link-info fw-bold">View
+                      solutions</a>
+                  {% else %}
+                    <div>Solutions not available</div>
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          {% partial submission %}
+
+          {% partial grading %}
+
+        </div>
+      </div>
+    </div>
+
+    {# instructor #}
+    {% if instructor %}
+      <div x-show="!student"
+           x-data="{editing{{ assignment.id }}: {% if assignment.form.errors %} true {% else %} false {% endif %}}">
+        <div>
+          <div class="m-3 p-2 border border-info rounded-2 bg-light"
+               style="max-width:800px">
+            {% if assignment.delete_forbidden %}
+              <div class="alert alert-warning alert-dismissible fade show">
+                Object is protected (submissions exist) - cannot delete
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endif %}
+
+            {# not editing properties #}
+            <div x-show="!editing{{ assignment.id }}">
+              <div class="d-flex justify-content-between cursor-pointer" x-sort:handle>
+                {# This time just the header part is the handle with cursor pointer, because forms will appear below #}
+                <div>
+                  <span class="fw-bold text-black">{{ assignment.name }}</span>
+                  -
+                  ({{ assignment.due_at|date:"n/j g:i a" }}, {{ assignment.self_grades_due_at|date:"n/j g:i a" }})
+                  -
+                  {% if assignment.statement_pdf %}
+                    <a href="{{ assignment.statement_pdf.url }}" target="_blank" class="link-info">statement</a>
+                  {% else %}
+                    <span class="text-danger">(no statement file)</span>
+                  {% endif %} -
+                  {% if assignment.solution_pdf %}
+                    <a href="{{ assignment.solution_pdf.url }}" target="_blank" class="link-info">solutions</a>
+                  {% else %}
+                    <span class="text-danger">(no solutions file)</span>
+                  {% endif %}
+                  <a style="font-size: 80%" @click="editing{{ assignment.id }} = true" href="#">edit</a>
+                </div>
+                <div>
+                  <button type="button" class="btn-close" aria-label="Delete"
+                          hx-confirm="Are you sure you wish to delete assignment '{{ assignment.name }}'?  The file will be permanently deleted."
+                          hx-post="{% url 'selfgrade:delete_assignment' assignment.pk %}"
+                          hx-target="#assignment{{ assignment.id }}"
+                          hx-swap="outerHTML"></button>
+                </div>
+              </div>
+            </div>
+
+            {# editing properties #}
+            <div x-show="editing{{ assignment.id }}">
+              <div class="d-flex justify-content-end">
+                <a class="link-info" style="font-size: 80%" @click="editing{{ assignment.id }} = false" href="#">(stop
+                  editing properties)</a>
+              </div>
+              <form hx-post="{% url 'selfgrade:update_assignment' assignment.id %}" %}
+                    hx-target="#assignment{{ assignment.id }}"
+                    hx-swap="outerHTML"
+                    hx-encoding="multipart/form-data">
+                {% crispy assignment.form assignment.form.helper %}
+                <button type="submit" class="btn btn-secondary">
+                  Update assignment
+                  <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+                </button>
+                <button type="button" @click="editing{{ assignment.id }} = false" class="btn btn-outline-info">Cancel
+                </button>
+              </form>
+            </div>
+
+            <hr class="m-2">
+
+            {# not editing parts #}
+            <div x-data="{editingparts: {% if assignment.formset.errors %} true {% else %} false {% endif %}}">
+              <div x-show="!editingparts">
+                <span class="{% if not assignment.parts|length %}text-danger{% endif %}">{{ assignment.parts|length }} graded parts </span>
+                <a style="font-size: 80%" @click="editingparts = true" href="#">edit</a>
+              </div>
+              <div x-show="editingparts">
+                <div><a class="link-info" style="font-size: 80%" @click="editingparts=false" href="#">(hide graded
+                  parts)</a></div>
+                <form hx-post="{% url 'selfgrade:update_parts' assignment.id %}"
+                      hx-target="#assignment{{ assignment.id }}"
+                      hx-swap="outerHTML">
+                  {% crispy assignment.formset assignment.formset.helper %}
+                  <button type="submit" class="btn btn-secondary">
+                    Update graded parts
+                    <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+                  </button>
+                  <button type="button" @click="editingparts = false" class="btn btn-outline-info">Cancel
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endpartialdef assignment %}
+
+{% partialdef assignments %}
+  <div id="assignments-content" class="accordion">
+    {# accordion only for student view -this class is ignored in instructor view #}
+    <script>
+      function reorder_assignments(item, position) {
+        {#console.log(item, position);#}
+        document.getElementById('reorder-assignment-item').value = item; //should be id of assignment that was just moved
+        document.getElementById('reorder-assignment-position').value = position; //new position in list starting with 0
+        document.getElementById('reorder-assignments-form').dispatchEvent(new Event('submit')); //trigger htmx submission
+      }
+    </script>
+    <form id="reorder-assignments-form" hx-post="{% url 'selfgrade:reorder_assignments' course.id %}"
+          hx-target="#assignments-content"
+          hx-swap="outerHTML" hx-indicator="#assignments-spinner">
+      <input id="reorder-assignment-item" type="hidden" name="item" value="">
+      <input id="reorder-assignment-position" type="hidden" name="position" value="">
+    </form>
+    <div x-data="{}" x-sort="reorder_assignments($item,$position)">
+      {% for assignment in assignments %}
+        {% partial assignment %}
+      {% endfor %}
+    </div>
+    {% if instructor %}
+      <div x-show="!student">
+        <div x-cloak x-data="{editing: {% if create_assignment_form.errors %} true {% else %} false {% endif %} }">
+          <a @click="editing = true" x-show="!editing" href="#">Create new assignment</a>
+          <span id="assignments-spinner" class="spinner-border spinner-border-sm htmx-indicator my-indicator"
+                role="status">
+          {# plan is to use this to show server calls for reordering assignments #}
+        </span>
+          <div class="card m-3 rounded-2 border-info border-2 mt-3" style="max-width: 800px"
+               x-show="editing">
+            <div class="card-header bg-secondary fw-bold text-info d-flex justify-content-between">
+              <div>
+                <button type="button" class="btn-close" style="visibility:hidden"></button>
+              </div>
+              {# for centering #}
+              <div>Add new assignment</div>
+              <button type="button" class="btn-close" @click="editing=false"></button>
+            </div>
+            <div class="card-body rounded-2 bg-light text-info">
+              <form hx-post="{% url 'selfgrade:create_assignment' %}" hx-target="#assignments-content"
+                    hx-swap="outerHTML"
+                    hx-encoding="multipart/form-data">
+                {#              {{ create_assignment_form|crispy }}#}
+                {% crispy create_assignment_form create_assignment_form.helper %}
+                <button type="submit" class="btn btn-secondary">
+                  Create assignment
+                  <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+                </button>
+                <button type="button" @click="editing = false" class="btn btn-outline-info">Cancel
+                  {# gray out cancel during request? #}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <div x-show="student">
+      <div x-data="{showgrades: false}">
+        <div class="mt-1" x-show="!showgrades">
+          <a class="link-info" href="#" @click="showgrades=true">(show assignment grade summary)</a>
+        </div>
+        <div class="card my-3 rounded-2 border-info border-2 mt-3" x-show="showgrades">
+          <div class="card-header bg-secondary fw-bold text-info d-flex justify-content-between">
+            <div>
+              <button type="button" class="btn-close" style="visibility:hidden"></button>
+            </div>
+            {# for centering #}
+            <div>Assignment grade summary</div>
+            <button type="button" class="btn-close" @click="showgrades=false"></button>
+          </div>
+          <div class="card-body rounded-2 bg-light text-info">
+            <table class="table clear-table">
+              <thead>
+              <tr>
+                {% for key in percentage_grades.keys %}
+                  <th>{{ key }}</th>
+                {% endfor %}
+              </tr>
+              </thead>
+              <tbody>
+              <tr>
+                {% for value in percentage_grades.values %}
+                  <td>{% if value is None %} --{% else %} {% widthratio value 1 100 %}% {% endif %}</td>
+                {% endfor %}
+              </tr>
+              </tbody>
+            </table>
+            <div class="text-muted">{{ assignment_grading_scheme }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endpartialdef assignments %}
+
+{% partialdef deleted_assignment %}
+  <div class="alert alert-success alert-dismissible fade show m-3" style="max-width: 800px">
+    Deleted assignment {{ assignment.name }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+{% endpartialdef %}
+
+{# ############################################ SUBMISSIONS ############################ #}
+
+{% partialdef submission %}
+  <div id="submission{{ assignment.id }}" class="card mt-2" style="background: seashell">
+    <div class="card-header">
+      <h5 class="card-title">
+        <div class="d-flex justify-content-between w-100">
+          <span>Submission</span>
+          <span style="font-size:80%"
+                class="me-3 text-muted d-flex align-items-end">due {{ assignment.due_at|date:"n/j g:i a" }}</span>
+        </div>
+      </h5>
+    </div>
+    <div class="card-body">
+      {% if assignment.is_after_deadline %}
+        {% if assignment.submission and assignment.submission.initial_submission %}
+          <div class="d-flex justify-content-evenly"> {# should change to bootstrap grid so it looks nicer on phones #}
+            <div>
+              You submitted this assignment
+              on {{ assignment.submission.submitted_at|date:"n/j" }}
+              at {{ assignment.submission.submitted_at|date:"g:i a" }}.
+            </div>
+            <a href="{{ assignment.submission.initial_submission.url }}" target="_blank" class="link-info fw-bold">View
+              submission</a>
+          </div>
+        {% else %}
+          <p>You did not submit this assignment.</p>
+        {% endif %}
+
+      {% else %} {# deadline has not passed yet  #}
+        {% if assignment.submission and assignment.submission.initial_submission %}
+          <div class="d-flex justify-content-evenly" ?>
+            {% if assignment.submission.success %}
+              <div class="text-success fw-bold fst-italic">Submission successful</div>
+            {% else %}
+              <div>You submitted this assignment on {{ assignment.submission.submitted_at|date:"g:i a" }}
+                at {{ assignment.submission.submitted_at|date:"g:i a" }}.
+              </div>
+            {% endif %}
+            <a href="{{ assignment.submission.initial_submission.url }}" target="_blank"
+               class="link-info fw-bold mb-2">View
+              Submission</a>
+          </div>
+          <div>You may update your submission until the deadline.</div>
+        {% endif %}
+        <form hx-post="{% url 'selfgrade:submit_assignment' %}"
+              hx-target="#submission{{ assignment.id }}"
+              hx-swap="outerHTML"
+              hx-encoding="multipart/form-data">
+          <div class="form-group d-flex">
+            <span>{{ assignment.submission_form|crispy }}</span>
+            <span class="ms-2">
+              <button type="submit" class="btn btn-secondary">
+                {% if assignment.submission and assignment.submission.initial_submission %}
+                  Update{% else %}
+                  Submit{% endif %}
+                <span class="spinner-border spinner-border-sm htmx-indicator my-indicator" role="status"></span>
+              </button>
+            </span>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+{% endpartialdef %}
+
+{# ################################ GRADING AKA ASSESSMENT ############################### #}
+
+{#  duplicated in review.html - fix #}
+{% partialdef schema_description %}
+  {% for item in schema.items.all %}
+    <b>{{ item.name }}</b> - {{ item.description }}<br>
+  {% endfor %}
+{% endpartialdef schema_description %}
+
+{% partialdef grading %}
+  <div id="grading{{ assignment.id }}" class="card mt-2" style="background: aliceblue">
+    <div class="card-header">
+      <h5 class="card-title">
+        <div class="d-flex justify-content-between w-100">
+          <span>Assessment</span>
+          <span style="font-size:80%"
+                class="me-3 text-muted d-flex align-items-end">due {{ assignment.self_grades_due_at|date:"n/j g:i a" }}</span>
+        </div>
+      </h5>
+    </div>
+    <div class="card-body">
+      {% if not assignment.is_after_deadline %}
+        Grading is not yet available
+      {% else %}
+        {% if assignment.submission.reviewed_at %} {# if reviewed, do not allow submission #}
+          {% if assignment.submission.graded_at and assignment.submission.graded_submission %}
+            <div class="d-flex justify-content-evenly">
+              <div>
+                <div>You submitted your self-assessment on {{ assignment.submission.graded_at|date:"n/j" }}
+                  at {{ assignment.submission.graded_at|date:"g:i a" }}.
+                </div>
+              </div>
+              <a href="{{ assignment.submission.graded_submission.url }}" target="_blank" class="link-info fw-bold">View
+                annotated submission</a>
+            </div>
+          {% else %}
+            You did not submit your self-assessment.
+          {% endif %}
+
+          {# display reviewed submission #}
+          <table class="table clear-table">
+            <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col">Rubric</th>
+              <th scope="col">Self assessment</th>
+              <th scope="col">Grade</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for form in assignment.grading_formset %}
+              {# use formset for loop even though we don't render forms #}
+              <tr>
+                <th scope="row">{{ form.instance.name }}</th>
+                <td>
+                  <a type="button" class="link-info" data-bs-toggle="tooltip" data-bs-placement="top"
+                     data-bs-html="true"
+                     title="{% with schema=form.instance.part.schema %} {% partial schema_description %} {% endwith %}">
+                    {{ form.instance.part.schema.name }}
+                  </a>
+                  {% if form.instance.part.rubric %}
+                    <p class="mb-0" style="font-size:80%">{{ form.instance.part.rubric }}</p>
+                  {% endif %}
+                </td>
+                <td>{% if form.instance.self_grade is None %} --
+                  {% else %}{{ form.instance.self_grade_name }}
+                {% endif %}</td>
+                {# don't render individual fields because hidden fields used by formset might be missing #}
+                <td>{% if form.instance.grade is None %} --
+                {% else %}
+                  <span
+                    {% if form.instance.self_grade is not None and form.instance.self_grade != form.instance.grade %}
+                      style="color:red"{% endif %} >
+                                               {{ form.instance.grade }}
+                                        </span>
+                {% endif %}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% if assignment.submission.comments %}
+            <p>Your comments:
+            <blockquote>
+              {{ assignment.submission.comments }}
+            </blockquote>
+            </p>
+          {% endif %}
+          {% if assignment.submission.reviewer_comments %}
+            <p>Reviewer comments:
+            <blockquote style="color:red">
+              {{ assignment.submission.reviewer_comments }}
+            </blockquote>
+            </p>
+          {% endif %}
+        {% else %} {# not reviewed yet - allow submission until review #}
+          {% if assignment.submission %}
+            {% if assignment.submission.graded_submission %}
+              <div class="d-flex justify-content-evenly">
+                {% if assignment.submission.grading_success %}
+                  <div class="text-success fw-bold fst-italic">Submission successful</div>
+                {% else %}
+                  <div>You submitted your self-assessment on {{ assignment.submission.graded_at|date:"n/j" }}
+                    at {{ assignment.submission.graded_at|date:"g:i a" }}.
+                  </div>
+                {% endif %}
+                <a href="{{ assignment.submission.graded_submission.url }}" target="_blank"
+                   class="link-info fw-bold mb-2">View submission</a>
+              </div>
+              <p>You may revise your self-assessment until it has been reviewed.</p>
+            {% endif %}
+
+            {# grading form table #}
+            <form hx-post="{% url 'selfgrade:submit_grading' assignment.submission.id %}" %}
+                  hx-target="#grading{{ assignment.id }}"
+                  hx-swap="outerHTML"
+                  hx-encoding="multipart/form-data">
+              {{ assignment.grading_formset.management_form }}
+              <table class="table clear-table">
+                <thead>
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col">Rubric</th>
+                  <th scope="col">Self Assessment*</th>
+                  <th scope="col">Grade</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for form in assignment.grading_formset %}
+                  <div class="form-group">
+                    <tr>
+                      <th scope="row">{{ form.instance.name }}</th>
+                      <td>
+                        <a type="button" class="link-info" data-bs-toggle="tooltip" data-bs-placement="top"
+                           data-bs-html="true"
+                           title="{% with schema=form.instance.part.schema %} {% partial schema_description %} {% endwith %}">
+                          {{ form.instance.part.schema.name }}
+                        </a>
+                        {% if form.instance.part.rubric %}
+                          <p class="mb-0" style="font-size:80%">{{ form.instance.part.rubric }}</p>
+                        {% endif %}
+                      </td>
+                      {# seems really inefficient - possibly calling db each time! #}
+                      <td>{% crispy form form.helper %}</td>
+                      {# don't render individual fields because hidden fields used by formset might be missing #}
+
+                      <td>{% if form.instance.grade is None %} --
+                        {% else %}{{ form.instance.grade }}
+                      {% endif %}</td>
+                    </tr>
+                  </div>
+                {% endfor %}
+                </tbody>
+              </table>
+              <div class="form-group">
+                {{ assignment.graded_submission_form|crispy }}
+              </div>
+              {#              <input type="hidden" name="grading_form_submit" value="true">#}
+              {#              <input type="hidden" name="assignment_id" value="{{ assignment.id }}"/>#}
+
+              <button type="submit" class="btn btn-secondary">
+                {% if not assignment.submission.graded_submission %}
+                  Submit assessment
+                {% else %}
+                  Update assessment
+                {% endif %}
+              </button>
+              {% if assignment.submission.grading_success %}
+                <span class="fw-bold text-success">Submission successful</span>{% endif %}
+            </form>
+          {% else %} {#  no submission recorded #}
+            You did not submit this assignment.
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endpartialdef grading %}
+
+{# ################################ GRADES TAB ################ #}
+
+{% partialdef grades %}
+
+  {% if grades %}
+    <div x-show="student">
+    <table class="table">
+      <thead>
+      <tr>
+        {% for key in grades.keys %}
+          <th>{{ key }}</th>
+        {% endfor %}
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        {% for value in grades.values %}
+          <td>{% if value is None %} --{% else %} {% widthratio value 1 100 %}% {% endif %}</td>
+        {% endfor %}
+      </tr>
+      </tbody>
+    </table>
+    <div class="text-muted">{{ grading_scheme }}</div>
+  {% else %}
+    <p>No grades available</p>
+  {% endif %}
+</div>
+  {% if instructor %}
+    <div x-show="!student">
+      <p>If you want to input test grades here too, I will set it up for you in the backend.
+      <p>Here are some useful links (opening in a new tab):
+      <ul>
+        <li><a href="{% url 'selfgrade:grade_report' course.id %}" target="_blank">Grade report</a></li>
+        <li><a href="{% url 'selfgrade:review_list' course.id %}" target="_blank">List of self-assessments to review</a>
+        </li>
+        <li><a href="{% url 'selfgrade:assignment_grades_csv' course.id %}" target="_blank">Assignment grades csv</a>
+        </li>
+      </ul>
+    </div>
+  {% endif %}
+{% endpartialdef grades %}
+
+{################################################### MAIN CONTENT ####################################################}
+
+{% block title %}
+  {{ course.name }}
+{% endblock title %}
+{% block content %}
+  <div x-data="{student: {% if instructor %} false {% else %} true {% endif %}}">
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-10 order-2 order-md-1">
+          {% partial name %}
+          {% partial description %}
+        </div>
+        {% if instructor %}
+          <div class="col-md-2 order-1 order-md-2 mb-3">
+            <div x-show="!student">
+              <div class="text-small text-primary text-center fw-bold opacity-75">Viewing as instructor</div>
+              <div class="d-flex justify-content-center">
+                <button @click="student=true" class="btn btn-outline-info m-0"><i class="bi bi-arrow-left-right"></i>
+                  student view
+                </button>
+              </div>
+            </div>
+            <div x-show="student">
+              <div class="text-small text-info text-center fw-bold opacity-75">Viewing as student</div>
+              <div class="d-flex justify-content-center">
+                <button @click="student=false" class="btn btn-outline-primary m-0"><i
+                  class="bi bi-arrow-left-right"></i>
+                  instructor view
+                </button>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="container mt-0 p-0">
+            {% if course.assignments_only %}
+              {% partial assignments %}
+            {% else %}
+              <ul class="nav nav-tabs mb-3 mt-4" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button href="#materials" class="nav-link active" id="materials-tab" data-bs-toggle="tab"
+                          data-bs-target="#materials" type="button"
+                          role="tab" aria-controls="materials" aria-selected="true">Materials
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button href="#assignments" class="nav-link" id="assignments-tab" data-bs-toggle="tab"
+                          data-bs-target="#assignments"
+                          role="tab" aria-controls="profile" aria-selected="false">Assignments
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button href="#grades" class="nav-link" id="settings-tab" data-bs-toggle="tab"
+                          data-bs-target="#grades" type="button"
+                          role="tab" aria-controls="grades" aria-selected="false">Grades
+                  </button>
+                </li>
+              </ul>
+
+              <!-- Tab panes -->
+              <div class="tab-content">
+                {# x-data needed for x-sort to work #}
+                <div id="materials" class="tab-pane active" id="materials" role="tabpanel"
+                     aria-labelledby="materials-tab">
+                  {% partial materials %}
+                </div>
+                <div class="tab-pane" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
+                  <div id="assignments" class="tab-pane active" id="assignments" role="tabpanel"
+                       aria-labelledby="assignments-tab">
+                    {% partial assignments %}
+                  </div>
+                </div>
+                <div class="tab-pane" id="grades" role="tabpanel" aria-labelledby="grades-tab">
+                  {% partial grades %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}
+
+{% block inline_javascript %}
+  {# initialize all tooltips #}
+  <script>
+    function loadAllTooltips() {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    }
+
+    htmx.onLoad(loadAllTooltips)
+  </script>
+{% endblock inline_javascript %}

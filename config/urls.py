@@ -7,6 +7,7 @@ from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 import courses.selfgrade.views
+import courses.users.views
 
 urlpatterns = [
     path("", courses.selfgrade.views.single_course_view, name="home"),
@@ -31,7 +32,8 @@ path(
     # User management
     path("users/", include("courses.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
-    path("selfgrade/", include("courses.selfgrade.urls", namespace="selfgrade")),
+    path("signup/", courses.users.views.instructor_signup_view, name='signup'),
+    path("g/", include("courses.selfgrade.urls", namespace="selfgrade")),
     # Your stuff: custom urls includes go here
     # ...
     # Media files

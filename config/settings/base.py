@@ -84,6 +84,9 @@ THIRD_PARTY_APPS = [
     "allauth.mfa",
     "allauth.socialaccount",
     "django_tex",
+    "template_partials",
+    "widget_tweaks",
+    "ordered_model",
 ]
 
 LOCAL_APPS = [
@@ -209,6 +212,7 @@ FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_FAIL_SILENTLY = not DEBUG
 
 # FIXTURES
 # ------------------------------------------------------------------------------
@@ -291,6 +295,8 @@ ACCOUNT_FORMS = {"signup": "courses.users.forms.UserSignupForm"}
 SOCIALACCOUNT_ADAPTER = "courses.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "courses.users.forms.UserSocialSignupForm"}
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+
 
 
 # Your stuff...

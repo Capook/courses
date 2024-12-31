@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Assignment grade report
+{% endblock title %}
+{% block content %}
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css">
+  <table class="table" id="data">
+    <thead>
+    <tr>
+      {% for header in headers %}
+        <th>{{ header }}</th>
+      {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in data %}
+      <tr>
+        {% for value in row %}
+          <td> {{ value }} </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <script>
+  //All columns except first two are percentages or "None"
+    var numCols = document.getElementById('data').rows[0].cells.length;
+    var targetCols = [];
+    for (var i = 2; i < numCols; i++) {
+      targetCols.push(i);
+    }
+    $('#data').DataTable( {
+    columnDefs: [ {
+        targets: targetCols,
+        render: function ( data, type, row ) {
+          if ( data == 'None' ) {
+            return '--';
+          } else {
+            return (parseFloat(data) * 100).toFixed(1) + '%';
+          }
+        }
+    } ]
+} );
+  </script>
+{% endblock content %}

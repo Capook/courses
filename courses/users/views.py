@@ -9,6 +9,25 @@ from django.views.generic import UpdateView
 
 from courses.users.models import User
 
+from allauth.account.views import SignupView
+
+class InstructorSignupView(SignupView):
+    # Signup View extended
+
+    # change template's name and path
+    template_name = "account/instructor_signup.html"
+
+    # You can also override some other methods of SignupView
+    # Like below:
+    # def form_valid(self, form):
+    #     ...
+    #
+    # def get_context_data(self, **kwargs):
+    #     ...
+
+
+instructor_signup_view = InstructorSignupView.as_view()
+
 
 class UserDetailView(LoginRequiredMixin, DetailView):
     model = User

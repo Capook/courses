@@ -9,7 +9,7 @@
     <ul>
       {% for registration in registrations %}
         <li>
-          <a href="{% url 'selfgrade:course_detail' course_id=registration.course.id %}">{{ registration.course.name }}</a>
+          <a href="{% url 'selfgrade:course' course_id=registration.course.id %}">{{ registration.course.name }}</a>
         </li>
       {% endfor %}
     </ul>
