@@ -345,8 +345,6 @@ def update_parts(request, assignment_id):
     if registration.type != Registration.INSTRUCTOR:
         return HttpResponseForbidden('Permission denied')
 
-    #TODO PREVENT UPDATE IF THERE ARE ALREADY SUBMISSIONS (AS WE DID WITH DELETE)
-
     assignment_formset = PartFormSet(request.POST, instance=assignment)
     if assignment_formset.is_valid():
         assignment_formset.save()
