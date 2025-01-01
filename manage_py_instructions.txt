@@ -1,0 +1,10 @@
+navigate to ~/courses
+
+source .venv/bin/activate
+python manage.py shell
+import environ
+env = environ.Env()
+env.read_env(".env")
+import django
+django.setup()
+from courses.selfgrade.models import Course
