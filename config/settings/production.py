@@ -17,7 +17,7 @@ from .base import STATIC_ROOT
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["courses.samgralla.me", "localhost", "137.184.228.171"])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["gradebird.com", "www.gradebird.com", "localhost", "137.184.228.171"])
 
 # DATABASES
 # ------------------------------------------------------------------------------
