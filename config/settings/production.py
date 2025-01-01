@@ -202,7 +202,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 #This removes signup view so make sure it isn't referenced
 SOCIALACCOUNT_ONLY = True
-ACCOUNT_EMAIL_VERIFICATION = None #necessary for socialaccount only, I think
+ACCOUNT_EMAIL_VERIFICATION = 'none' #necessary for socialaccount only, I think
 
 # Django tex
 LATEX_INTERPRETER = 'pdflatex' #https://pypi.org/project/django-tex/
